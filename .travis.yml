@@ -1,0 +1,21 @@
+language: scala
+
+sudo: required
+
+services:
+   - docker
+
+scala:
+   - 2.11.7
+   
+jdk:
+   - oraclejdk8
+
+
+cache:
+  directories:
+  - $HOME/.ivy2/cache
+  - $HOME/.sbt/boot/
+
+script: "sbt clean coverage test"
+after_success: "sbt coveralls"
