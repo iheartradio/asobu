@@ -19,6 +19,7 @@ object Dependencies {
   )
 
   val test = Seq(
+    "com.typesafe.play" %% "play-specs2" % Versions.play % "test",
     "org.specs2" %% "specs2-core" % Versions.specs2 % "test",
     "org.specs2" %% "specs2-mock" % Versions.specs2 % "test"
   )

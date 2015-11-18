@@ -1,28 +1,31 @@
 package com.iheart.play.akka
 
+import org.specs2.concurrent.ExecutionEnv
+import play.api.libs.json.JsString
 import play.api.mvc.{ Request, Result }
 import play.api.mvc.Results._
+import play.api.test.{ FakeRequest, PlaySpecification }
 import scala.concurrent.Future
 
 import scala.reflect._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class DirectiveSpec extends SpecWithMockRequest {
+class DirectiveSpec extends PlaySpecification {
+  import scala.concurrent.ExecutionContext.Implicits.global
 
-  "construct directive from partial function" >> {
+  "construct directive from partial function" >> { implicit ee: ExecutionEnv ⇒
     val pf: PartialFunction[Any, Future[Result]] = {
       case "expected" ⇒ Future.successful(Ok)
       case _          ⇒ Future.successful(InternalServerError)
     }
 
     val dir: Directive[Any] = Directive(pf)
-    dir(mockReq("expected")) must be_==(Ok).await
-    dir(mockReq("something else")) must be_==(InternalServerError).await
+    dir(FakeRequest().withBody("expected")) must be_==(Ok).await
+    dir(FakeRequest().withBody("something else")) must be_==(InternalServerError).await
 
   }
 
   "fallback" >> {
-    "fall back to the other directive" >> {
+    "fall back to the other directive" >> { implicit ee: ExecutionEnv ⇒
       import Directive._
 
       val fallbackTo: Directive[Any] = {
@@ -34,8 +37,8 @@ class DirectiveSpec extends SpecWithMockRequest {
 
       val resultDir = original.fallback(fallbackTo)(classTag[String])
 
-      resultDir(mockReq("body")) must be_==(Ok).await
-      resultDir(mockReq(3)) must be_==(InternalServerError).await
+      resultDir(FakeRequest().withBody("body")) must be_==(Ok).await
+      resultDir(FakeRequest().withBody(1)) must be_==(InternalServerError).await
 
     }
 

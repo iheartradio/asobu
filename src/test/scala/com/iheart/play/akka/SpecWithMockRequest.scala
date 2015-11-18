@@ -2,7 +2,7 @@ package com.iheart.play.akka
 
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import play.api.mvc.Request
+import play.api.mvc.{ Headers, Request }
 
 trait SpecWithMockRequest extends Specification with Mockito {
 
