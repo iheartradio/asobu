@@ -1,5 +1,6 @@
 package com.iheart.play.akka
 
+import Syntax._
 import org.specs2.concurrent.ExecutionEnv
 import play.api.libs.json.JsString
 import play.api.mvc.{ Request, Result }

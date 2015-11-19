@@ -8,6 +8,8 @@ import ops.record._
 
 import ControllerMethodBuilder._
 
+import Syntax._
+
 class ControllerMethodBuilder[RMT, ExtractedRepr <: HList, FullRepr <: HList, InputRepr <: HList, V <: HList, K <: HList, TempFull <: HList]
   (extractor: Extractor[ExtractedRepr],
    directive: Directive[RMT])

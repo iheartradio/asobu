@@ -1,14 +1,10 @@
 package com.iheart.play.akka
 
-import play.api.mvc.{ Result, Request }
-import Directive._
-
 import scala.reflect.ClassTag
 
-package object dsl {
+object Syntax extends ProcessorOps with DirectiveOps {
 
-  implicit class DirectiveDSLOps[RMT: ClassTag](d: Directive[RMT]) {
-    private val self = new DirectiveOps(d)
+  implicit class DirectiveDSLOps[RMT: ClassTag](self: Directive[RMT]) {
     def notFoundIfEmpty[InnerT](extractor: RMT ⇒ Option[InnerT]): Directive[RMT] =
       self.filter(Filters.notFoundIfEmpty(extractor))
 

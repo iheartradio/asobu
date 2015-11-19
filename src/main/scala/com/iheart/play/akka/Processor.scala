@@ -6,7 +6,19 @@ import scala.concurrent.Future
 
 object Processor {
 
-  implicit class ProcessorOpts[RMT, PRT](self: Processor[RMT, PRT]) {
+  def identity[T]: Processor[T, T] = r ⇒ Future.successful(r.body)
+
+  def apply[RMT, PRT](f: RMT ⇒ Future[PRT]): Processor[RMT, PRT] =
+    (req: Request[RMT]) ⇒ f(req.body)
+
+  def synced[RMT, PRT](f: RMT ⇒ PRT): Processor[RMT, PRT] =
+    apply(f andThen Future.successful)
+
+}
+
+trait ProcessorOps {
+
+  implicit class ops[-RMT, +PRT](self: Processor[RMT, PRT]) {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     def flatMap[T](f: Request[PRT] ⇒ Future[T]): Request[RMT] ⇒ Future[T] = (req: Request[RMT]) ⇒ {
@@ -15,12 +27,10 @@ object Processor {
       }
     }
 
-    def toDirective(afterDirective: Directive[PRT]): Directive[RMT] = flatMap(afterDirective)
+    def :+(directive: Directive[PRT]): Directive[RMT] = flatMap(directive)
 
     def +[FRT](another: Processor[PRT, FRT]): Processor[RMT, FRT] = flatMap(another)
   }
 
-  def apply[RMT, PRT](f: RMT ⇒ Future[PRT]): Processor[RMT, PRT] =
-    (req: Request[RMT]) ⇒ f(req.body)
-
 }
+
