@@ -13,6 +13,7 @@ object Dependencies {
   )
 
   val shapeless = Seq("com.chuusai" %% "shapeless" % "2.2.5")
+  val cat = Seq("org.spire-math" %% "cats" % "0.3.0")
 
   val yaml = Seq(
     "org.yaml" % "snakeyaml" % "1.16"
@@ -25,7 +26,7 @@ object Dependencies {
   )
 
   val settings = Seq(
-    libraryDependencies ++= play ++ test ++ shapeless,
+    libraryDependencies ++= play ++ test ++ shapeless ++ cat,
     scalaVersion in ThisBuild := "2.11.7",
     resolvers ++= Seq(
       Resolver.sonatypeRepo("releases"),

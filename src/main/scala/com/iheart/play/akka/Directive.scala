@@ -1,6 +1,6 @@
 package com.iheart.play.akka
 
-import play.api.mvc.{ Action, Result, Request }
+import play.api.mvc.{ Result, Request }
 
 import scala.concurrent.Future
 import scala.reflect._
@@ -17,7 +17,7 @@ object Directive {
 
 trait DirectiveOps {
 
-  implicit class ops[RMT](self: Directive[RMT]) {
+  implicit class directiveOps[RMT](self: Directive[RMT]) {
 
     def filter(f: Filter[RMT]): Directive[RMT] = (r: Request[RMT]) ⇒ f(r, self(r))
 
