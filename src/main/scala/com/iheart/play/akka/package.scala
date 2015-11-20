@@ -16,5 +16,6 @@ package object akka {
 
   type Extractor[+ExtractedRepr <: HList] = Request[AnyContent] ⇒ Future[Xor[Result, ExtractedRepr]]
 
+
 }
 

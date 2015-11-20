@@ -17,7 +17,7 @@ class JsonBodyExtractorBuilder[T: Reads] {
       case Some(JsError(errors)) ⇒
         Left(BadRequest(errors.seq.mkString(";")))
       case None ⇒
-        Left(BadRequest("Invalid JSON body"))
+        Left(BadRequest("Invalid JSON body " + req.body.asText))
     })
 }
 

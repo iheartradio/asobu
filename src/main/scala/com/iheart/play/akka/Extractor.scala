@@ -4,7 +4,7 @@ import cats.data.{Xor, XorT}
 import play.api.mvc.Results._
 import play.api.mvc.{Result, AnyContent, Request}
 import shapeless.ops.hlist.Prepend
-import shapeless.{LabelledGeneric, HList}
+import shapeless.{HNil, HList}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -21,21 +21,21 @@ object Extractor {
     }
   }
 
+  val empty: Extractor[HNil] = apply(_ ⇒ HNil)
+
   implicit def apply[Repr <: HList](f : Request[AnyContent] ⇒ Repr): Extractor[Repr] = fromTry(f andThen (Try[Repr](_)))
 
   def fromEither[Repr <: HList](f : Request[AnyContent] ⇒ Future[Either[Result, Repr]]): Extractor[Repr] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     f.andThen(_.map(Xor.fromEither))
   }
-
 }
 
 trait ExtractorOps {
   import ScalaCatsInstances._
 
-
   implicit class extractorOps[Repr <: HList](self: Extractor[Repr]) {
-    def +[ThatR <: HList, ResultR <: HList](that: Extractor[ThatR])(
+    def |+|[ThatR <: HList, ResultR <: HList](that: Extractor[ThatR])(
       implicit prepend: Prepend.Aux[Repr, ThatR, ResultR]
     ): Extractor[ResultR] = { req ⇒
 

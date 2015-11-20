@@ -14,6 +14,7 @@ import scala.concurrent.Future
 
 trait ControllerMethodBuilder {
 
+
   case class handle[RMT, ExtractedRepr <: HList, FullRepr <: HList, InputRepr <: HList, V <: HList, K <: HList, TempFull <: HList]
     (extractor: Extractor[ExtractedRepr], directive: Directive[RMT])
     (implicit lgen: LabelledGeneric.Aux[RMT, FullRepr],
@@ -45,7 +46,4 @@ trait ControllerMethodBuilder {
 
 }
 
-object ControllerMethodBuilder extends ControllerMethodBuilder {
-
-
-}
+object ControllerMethodBuilder extends ControllerMethodBuilder
