@@ -5,6 +5,7 @@ object Dependencies {
   object Versions {
     val play = "2.4.2"
     val specs2 = "3.0"
+    val akka = "2.4.0"
   }
 
   val play = Seq(
@@ -17,6 +18,10 @@ object Dependencies {
 
   val yaml = Seq(
     "org.yaml" % "snakeyaml" % "1.16"
+  )
+
+  val akka = Seq(
+    "com.typesafe.akka" %% "akka-actor" % Versions.akka
   )
 
   val test = Seq(
