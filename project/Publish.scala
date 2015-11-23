@@ -10,6 +10,8 @@ object Publish {
   )
 
   val publishingSettings = Seq(
+
+    organization in ThisBuild := "com.iheart",
     publishMavenStyle := true,
     licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     homepage := Some(url("http://iheartradio.github.io/play-swagger")),
