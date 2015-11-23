@@ -49,7 +49,7 @@ class SyntaxSpec extends PlaySpecification {
         val withExtraction = handle(
           from(req ⇒ 'name ->> req.headers("my_name") :: HNil),
           process[RequestMessage] using actor
-            respondWith {
+            expectAny {
               case ResponseMessage(id, msg) ⇒ Ok(s"${id} ${msg}")
             }
         )
@@ -68,8 +68,8 @@ class SyntaxSpec extends PlaySpecification {
 
       val controller = new Controller {
         val combined = handle(
-          fromJson[PartialRequestMessage].body |+| from(req ⇒ 'name ->> req.headers("my_name") :: HNil),
-          (process[RequestMessage] using actor) >> simpleOk[ResponseMessage]
+          fromJson[PartialRequestMessage].body and from(req ⇒ 'name ->> req.headers("my_name") :: HNil),
+          process[RequestMessage] using actor next expect[ResponseMessage](Ok(_))
         )
       }
 
@@ -85,7 +85,7 @@ class SyntaxSpec extends PlaySpecification {
     "without extraction" >> {
       val controller = new Controller {
         val withOutExtraction = handleParams(
-          (process[RequestMessage] using actor) >> simpleOk[ResponseMessage]
+          process[RequestMessage] using actor next expect[ResponseMessage](Ok(_))
         )
       }
 
@@ -96,6 +96,32 @@ class SyntaxSpec extends PlaySpecification {
       val respBody: JsValue = contentAsJson(result)
       respBody === Json.obj("id" → JsString("myId"), "msg" → JsString("hello! jon"))
 
+    }
+
+    "with filter " >> { implicit ev: ExecutionEnv ⇒
+      val authFilter: Filter[Any] = (req, result) ⇒ {
+        req.headers.get("sessionId") match {
+          case Some(sessionId) if sessionId.toInt > 0 ⇒ result
+          case _                                      ⇒ Future.successful(Unauthorized("invalid session"))
+        }
+      }
+
+      val withFilter = handleParams(
+        process[RequestMessage] using actor next expect[ResponseMessage](Ok(_)) filter authFilter
+      )
+      val action = withFilter("myId", "jon", 3.1)
+
+      val reqWithAuthInfo = FakeRequest().withHeaders("sessionId" → "3")
+
+      val result1: Future[Result] = call(action, reqWithAuthInfo)
+
+      result1.map(_.header.status) must be_==(OK).await
+
+      val reqWithoutAuthInfo = FakeRequest()
+
+      val result2: Future[Result] = call(action, reqWithoutAuthInfo)
+
+      result2.map(_.header.status) must be_==(UNAUTHORIZED).await
     }
 
   }

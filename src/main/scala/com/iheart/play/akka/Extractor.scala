@@ -35,7 +35,7 @@ trait ExtractorOps {
   import ScalaCatsInstances._
 
   implicit class extractorOps[Repr <: HList](self: Extractor[Repr]) {
-    def |+|[ThatR <: HList, ResultR <: HList](that: Extractor[ThatR])(
+    def and[ThatR <: HList, ResultR <: HList](that: Extractor[ThatR])(
       implicit prepend: Prepend.Aux[Repr, ThatR, ResultR]
     ): Extractor[ResultR] = { req ⇒
 

@@ -27,9 +27,7 @@ trait ProcessorOps {
       }
     }
 
-    def >>(directive: Directive[PRT]): Directive[RMT] = flatMap(directive)
-
-    def |+|[FRT](another: Processor[PRT, FRT]): Processor[RMT, FRT] = flatMap(another)
+    def next[FRT](another: Processor[PRT, FRT]): Processor[RMT, FRT] = flatMap(another)
   }
 
 }

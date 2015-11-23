@@ -29,7 +29,7 @@ class ExtractorSpec extends PlaySpecification {
 
     val extractor2 = Extractor((req: Request[AnyContent]) ⇒ 'bar3 ->> req.headers("bar3") :: HNil)
 
-    val extractor = extractor1 |+| extractor2
+    val extractor = extractor1 and extractor2
 
     val result = extractor(FakeRequest().withJsonBody(Json.obj("bar" → "hello", "bar2" → 3)).withHeaders("bar3" → "bar3Value"))
 

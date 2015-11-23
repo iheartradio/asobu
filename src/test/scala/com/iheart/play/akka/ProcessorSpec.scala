@@ -15,10 +15,10 @@ class ProcessorSpec extends PlaySpecification {
     p(FakeRequest().withBody(1)) must be_==("Success").await
   }
 
-  "add to a directive" >> { implicit ee: ExecutionEnv ⇒
+  "channel to a directive" >> { implicit ee: ExecutionEnv ⇒
     val p = Processor.synced[Int, String](_.toString)
     val d = Directive.constant[String](Ok)
-    val subject = p >> d
+    val subject = p next d
 
     subject must beAnInstanceOf[Directive[Int]]
 
