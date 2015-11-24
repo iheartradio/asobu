@@ -3,14 +3,15 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val play = "2.4.2"
+    val play = "[2.3.0, 2.4.+)"
     val specs2 = "3.0"
-    val akka = "2.4.0"
+    val akka = "[2.3.0, 2.4.+)"
   }
 
   val play = Seq(
     "com.typesafe.play" %% "play" % Versions.play % "provided",
-    "com.typesafe.play" %% "play-json" % Versions.play % "provided"
+    "com.typesafe.play" %% "play-json" % Versions.play % "provided",
+    "com.typesafe.play" %% "play-cache" % Versions.play % "provided"
   )
 
   val shapeless = Seq("com.chuusai" %% "shapeless" % "2.2.5")
@@ -21,11 +22,11 @@ object Dependencies {
   )
 
   val akka = Seq(
-    "com.typesafe.akka" %% "akka-actor" % Versions.akka
+    "com.typesafe.akka" %% "akka-actor" % Versions.akka % "provided"
   )
 
   val test = Seq(
-    "com.typesafe.play" %% "play-specs2" % Versions.play % "test",
+    "com.typesafe.play" %% "play-specs2" % Versions.play % "test, provided",
     "org.specs2" %% "specs2-core" % Versions.specs2 % "test",
     "org.specs2" %% "specs2-mock" % Versions.specs2 % "test"
   )
