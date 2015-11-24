@@ -5,16 +5,23 @@ import play.api.mvc.Results._
 
 import scala.concurrent.Future
 import scala.reflect._
+import CatsInstances._
+import cats.std.function._
+import cats.syntax.contravariant._
 
 object Directive {
 
   def constant[RMT](r: Result): Directive[RMT] = _ ⇒ Future.successful(r)
 
-  def apply[RMT](pf: PartialFunction[RMT, Future[Result]]): Directive[RMT] = (req: Request[RMT]) ⇒ pf(req.body)
+  def apply[RMT](f: RMT ⇒ Result): Directive[RMT] = (f andThen Future.successful) contramap[Request[RMT]](_.body)
 
-  def synced[RMT](pf: PartialFunction[RMT, Result]): Directive[RMT] = apply(pf andThen (Future.successful))
+}
 
-  def apply[RMT](f: RMT ⇒ Result): Directive[RMT] = apply(PartialFunction(f andThen Future.successful))
+object PartialDirective {
+
+  def apply[RMT](pf: PartialFunction[RMT, Future[Result]]): PartialDirective[RMT] = pf.contramap[Request[RMT]](_.body)
+
+  def synced[RMT](pf: PartialFunction[RMT, Result]): PartialDirective[RMT] = apply(pf andThen (Future.successful))
 
 }
 

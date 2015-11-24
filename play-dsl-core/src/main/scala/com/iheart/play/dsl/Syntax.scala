@@ -40,6 +40,8 @@ object Syntax
   implicit class DirectiveDSL[RMT: ClassTag](self: Directive[RMT]) {
     def notFoundIfEmpty[InnerT](extractor: RMT ⇒ Option[InnerT]): Directive[RMT] =
       self.filter(filters.notFoundIfEmpty(extractor))
+
+    def `with`(f: Filter[RMT]) = self.filter(f)
   }
 
   def fromJson[T: Reads] = new extractors.JsonBodyExtractorBuilder[T]

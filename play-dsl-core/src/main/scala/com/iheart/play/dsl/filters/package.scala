@@ -17,6 +17,7 @@ package object filters {
     fieldExtractor(req.body).fold(notFoundResult)(_ ⇒ result)
   }
 
-  def caching[RMT](duration: Duration)(implicit cache: CacheApi): Filter[RMT] = (req, result) ⇒ cache.getOrElse(req.body.toString)(result)
+  def caching[RMT](duration: Duration)(implicit cache: CacheApi): Filter[RMT] =
+    (req, result) ⇒ cache.getOrElse(req.body.toString)(result)
 
 }

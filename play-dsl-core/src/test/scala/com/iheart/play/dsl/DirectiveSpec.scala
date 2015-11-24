@@ -19,7 +19,7 @@ class DirectiveSpec extends PlaySpecification {
       case _          ⇒ Future.successful(InternalServerError)
     }
 
-    val dir: Directive[Any] = Directive(pf)
+    val dir: PartialDirective[Any] = PartialDirective(pf)
     dir(FakeRequest().withBody("expected")) must be_==(Ok).await
     dir(FakeRequest().withBody("something else")) must be_==(InternalServerError).await
 

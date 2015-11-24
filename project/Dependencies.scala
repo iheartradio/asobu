@@ -38,7 +38,8 @@ object Dependencies {
       Resolver.sonatypeRepo("releases"),
       Resolver.sonatypeRepo("snapshots"),
       Resolver.bintrayRepo("scalaz", "releases")
-    )
+    ),
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
   )
 
 }
