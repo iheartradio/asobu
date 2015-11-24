@@ -2,9 +2,10 @@ package com.iheart.play.dsl
 
 import com.iheart.play.dsl._
 import com.iheart.play.dsl.directives.FallBackDir
+import com.iheart.play.dsl.extractors.AuthInfoExtractorBuilder
 import play.api.libs.json.{JsValue, Json, Writes, Reads}
 import play.api.mvc.Results._
-import play.api.mvc.{AnyContent, Request, Result}
+import play.api.mvc.{RequestHeader, AnyContent, Request, Result}
 import shapeless.ops.hlist.{Align, ZipWithKeys}
 import shapeless.ops.record.{Values, Keys}
 import shapeless.{LabelledGeneric, HList}
@@ -56,6 +57,8 @@ object Syntax
     Directive((t: T) ⇒ tr(Json.toJson(t))).fallback(fb)
 
   def from[Repr <: HList] = Extractor.apply[Repr] _
+
+  def fromAuthorized[AuthInfoT](ba: RequestHeader ⇒ Future[Either[String, AuthInfoT]]) = new AuthInfoExtractorBuilder[AuthInfoT](ba)
 
   def handleParams[RMT, FullRepr <: HList, K <: HList, V <: HList]
     (directive: Directive[RMT])

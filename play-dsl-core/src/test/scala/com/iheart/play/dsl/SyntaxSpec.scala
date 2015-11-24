@@ -124,5 +124,38 @@ class SyntaxSpec extends PlaySpecification {
       result2.map(_.header.status) must be_==(UNAUTHORIZED).await
     }
 
+    "with AuthExtractor" >> { implicit ev: ExecutionEnv ⇒
+
+      case class SessionInfo(sessionId: String)
+
+      def sessionInfo(req: RequestHeader): Future[Either[String, SessionInfo]] = Future.successful(
+        req.headers.get("sessionId") match {
+          case Some(sid) ⇒ Right(SessionInfo(sid))
+          case None      ⇒ Left("SessionId is missing from header")
+        }
+      )
+
+      val handler = handle(
+        fromAuthorized(sessionInfo)(si ⇒ 'id ->> si.sessionId :: HNil),
+        process[RequestMessage] using actor next expect[ResponseMessage](Ok(_))
+      )
+
+      val action = handler("mike", 3.4)
+
+      val reqWithAuthInfo = FakeRequest().withHeaders("sessionId" → "3")
+
+      val result1: Future[Result] = call(action, reqWithAuthInfo)
+
+      result1.map(_.header.status) must be_==(OK).await
+
+      (contentAsJson(result1) \ "id").as[String] === "3"
+
+      val reqWithoutAuthInfo = FakeRequest()
+
+      val result2: Future[Result] = call(action, reqWithoutAuthInfo)
+
+      result2.map(_.header.status) must be_==(UNAUTHORIZED).await
+
+    }
   }
 }
