@@ -23,7 +23,7 @@ class ExtractorSpec extends PlaySpecification {
 
   }
 
-  "+ combines two extractor" >> { implicit ee: ExecutionEnv ⇒
+  "and combines two extractor" >> { implicit ee: ExecutionEnv ⇒
 
     val extractor1 = fromJson[Foo].body
 

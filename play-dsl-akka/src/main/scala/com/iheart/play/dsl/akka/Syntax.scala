@@ -1,11 +1,11 @@
-package com.iheart.play.dsl.akka
+package com.iheart.play.dsl
 
-import akka.actor.{ ActorSelection, ActorRef }
-import akka.util.Timeout
-import akka.pattern.ask
+import _root_.akka.actor.{ ActorSelection, ActorRef }
+import _root_.akka.util.Timeout
+import _root_.akka.pattern.ask
 import com.iheart.play.dsl.Syntax._
 
-object Syntax {
+package object akka {
   implicit def actorAskBuilder(implicit to: Timeout) = new AskableBuilder[ActorRef] {
     def apply(t: ActorRef): Askable = t.ask
   }

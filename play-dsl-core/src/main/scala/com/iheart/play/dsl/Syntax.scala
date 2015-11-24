@@ -1,19 +1,15 @@
 package com.iheart.play.dsl
 
-import com.iheart.play.dsl._
 import com.iheart.play.dsl.directives.FallBackDir
 import com.iheart.play.dsl.extractors.AuthInfoExtractorBuilder
 import play.api.libs.json.{JsValue, Json, Writes, Reads}
-import play.api.mvc.Results._
-import play.api.mvc.{RequestHeader, AnyContent, Request, Result}
+import play.api.mvc.{RequestHeader, Result}
 import shapeless.ops.hlist.{Align, ZipWithKeys}
 import shapeless.ops.record.{Values, Keys}
 import shapeless.{LabelledGeneric, HList}
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
-import scala.util.Try
-import cats.syntax.semigroup._
 
 object Syntax
   extends ProcessorOps
@@ -35,19 +31,25 @@ object Syntax
 
   def process[RMT] = new processorBuilder[RMT]
 
-//  def ask[RMT, T](t: T)(implicit b: AskableBuilder[T]): Processor[RMT, Any] = Processor[RMT, Any](b(t))
 
   implicit class DirectiveDSL[RMT: ClassTag](self: Directive[RMT]) {
-    def notFoundIfEmpty[InnerT](extractor: RMT ⇒ Option[InnerT]): Directive[RMT] =
-      self.filter(filters.notFoundIfEmpty(extractor))
 
     def `with`(f: Filter[RMT]) = self.filter(f)
+
+    def ifEmpty[InnerT](fieldExtractor: RMT ⇒ Option[InnerT]) = new Object {
+      def respond(alternative: Result) = {
+        val f: Filter[RMT] = (req, result) ⇒ fieldExtractor(req.body).fold(Future.successful(alternative))(_ ⇒ result)
+        self.`with`(f)
+      }
+    }
   }
 
   def fromJson[T: Reads] = new extractors.JsonBodyExtractorBuilder[T]
 
-  implicit class ProcessAnyDSL[RMT](self: Processor[RMT, Any]) {
+  implicit class ProcessAnyDSL[RMT, PRT](self: Processor[RMT, PRT]) {
     def expectAny(pf: PartialFunction[Any, Result]) = self next Directive(pf)
+
+    def `then`[RT: ClassTag](d: Directive[RT])(implicit fb: FallBackDir) = self next (d fallback fb)
   }
 
   implicit class FilterDSL[RMT](self: Filter[RMT]) {
@@ -55,8 +57,16 @@ object Syntax
     def and(that: Filter[RMT]) = self combine that
   }
 
-  def expect[T: ClassTag: Writes](tr: JsValue ⇒ Result)(implicit fb: FallBackDir): Directive[Any] =
-    Directive((t: T) ⇒ tr(Json.toJson(t))).fallback(fb)
+
+
+  case class expect[RMT: ClassTag]() {
+    private def directive(f: RMT ⇒ Result) = Directive(f)
+
+    def respond(result: Result) = directive(_ ⇒ result)
+    def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]) = directive(t ⇒ tr(Json.toJson(t)))
+
+
+  }
 
   def from[Repr <: HList] = Extractor.apply[Repr] _
 

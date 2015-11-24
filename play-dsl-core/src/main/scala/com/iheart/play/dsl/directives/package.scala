@@ -14,14 +14,8 @@ package object directives {
   type FallBackDir = PartialDirective[Any]
 
   def fallBackTo500: FallBackDir = PartialDirective.synced[Any] {
-    case e: Throwable ⇒ InternalServerError(e.getMessage)
+    case e: Throwable ⇒ InternalServerError(Json.obj("error" → e.getMessage))
     case m            ⇒ InternalServerError(new MatchError(m).getMessage)
   }
-
-  def simpleOk[T: ClassTag: Writes](implicit fb: FallBackDir): Directive[Any] =
-    Directive((t: T) ⇒ Ok(Json.toJson(t))).fallback(fb)
-
-  def checkType[T: ClassTag](result: Result)(implicit fb: FallBackDir): Directive[Any] =
-    Directive.constant[T](result).fallback(fb)
 
 }
