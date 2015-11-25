@@ -13,7 +13,7 @@ object Directive {
 
   def constant[RMT](r: Result): Directive[RMT] = _ ⇒ Future.successful(r)
 
-  def apply[RMT](f: RMT ⇒ Result): Directive[RMT] = (f andThen Future.successful) contramap[Request[RMT]](_.body)
+  def apply[RMT](f: RMT ⇒ Result): Directive[RMT] = (f andThen Future.successful).contramap[Request[RMT]](_.body)
 
 }
 
