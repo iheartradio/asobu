@@ -1,6 +1,6 @@
 language: scala
 
-sudo: required
+sudo: false
 
 services:
    - docker
