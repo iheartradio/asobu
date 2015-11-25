@@ -5,6 +5,7 @@ object Projects extends Build {
   lazy val playDSLAll = Project("play-dsl-all", file("."))
     .aggregate(playDSL, playDSLAkka)
     .settings(noPublishing: _*)
+    .settings(Testing.settings: _*)
 
   lazy val playDSL = Project("play-dsl", file("play-dsl-core"))
     .settings(
