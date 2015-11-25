@@ -21,4 +21,4 @@ script:
   - sbt clean coverage test &&
     sbt coverageAggregate
 after_success:
-  - sbt "project play-dsl" coveralls
+  - sbt coveralls
