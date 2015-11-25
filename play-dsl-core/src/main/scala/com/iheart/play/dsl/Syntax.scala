@@ -44,6 +44,10 @@ object Syntax
     }
   }
 
+  def `with`[RMT](filters: Filter[Any]*)(directive: Directive[RMT]): Directive[RMT] =
+    directive.filter(filters.reduce(_ and _))
+
+
   def fromJson[T: Reads] = new extractors.JsonBodyExtractorBuilder[T]
 
   implicit class ProcessAnyDSL[RMT, PRT](self: Processor[RMT, PRT]) {

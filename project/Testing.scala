@@ -6,7 +6,7 @@ object Testing {
 
 
   lazy val settings = Seq(
-      coverallsToken := Some("8IGVvRI0URTzmzUd5Ts7CtsMecw6wbkme"),
+      coverallsToken := Some("oMsqCiytrYd64xyv1pnblPSZn0TsYOUUD"),
       scalacOptions in Test ++= Seq("-Yrangepos"),
       testOptions in Test := Seq(Tests.Argument(TestFrameworks.Specs2, "-xonly"))
     )
