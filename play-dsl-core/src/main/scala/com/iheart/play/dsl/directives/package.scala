@@ -11,17 +11,11 @@ import Syntax._
 package object directives {
 
   @implicitNotFound("You need to provide an implicit fall back directive to handle mismatches. You can use the default one by \n import com.iheart.play.akka.DefaultImplicits._ ")
-  type FallBackDir = Directive[Any]
+  type FallBackDir = PartialDirective[Any]
 
-  def fallBackTo500: FallBackDir = Directive.synced[Any] {
-    case e: Throwable ⇒ InternalServerError(e.getMessage)
+  def fallBackTo500: FallBackDir = PartialDirective.synced[Any] {
+    case e: Throwable ⇒ InternalServerError(Json.obj("error" → e.getMessage))
     case m            ⇒ InternalServerError(new MatchError(m).getMessage)
   }
-
-  def simpleOk[T: ClassTag: Writes](implicit fb: FallBackDir): Directive[Any] =
-    Directive((t: T) ⇒ Ok(Json.toJson(t))).fallback(fb)
-
-  def checkType[T: ClassTag](result: Result)(implicit fb: FallBackDir): Directive[Any] =
-    Directive.constant[T](result).fallback(fb)
 
 }

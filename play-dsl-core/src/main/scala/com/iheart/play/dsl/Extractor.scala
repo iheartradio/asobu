@@ -32,7 +32,7 @@ object Extractor {
 }
 
 trait ExtractorOps {
-  import ScalaCatsInstances._
+  import CatsInstances._
 
   implicit class extractorOps[Repr <: HList](self: Extractor[Repr]) {
     def and[ThatR <: HList, ResultR <: HList](that: Extractor[ThatR])(

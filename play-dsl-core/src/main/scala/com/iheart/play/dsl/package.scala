@@ -8,9 +8,13 @@ import scala.concurrent.Future
 
 package object dsl {
 
-  type Directive[-RMT] = Request[RMT] ⇒ Future[Result]
-
   type Processor[-RMT, +PRT] = Request[RMT] ⇒ Future[PRT]
+
+  type Directive[-RMT] = Processor[RMT, Result]
+
+  type PartialDirective[-RMT] = PartialFunction[Request[RMT], Future[Result]]
+
+
 
   type Filter[-RMT] = (Request[RMT], ⇒ Future[Result]) ⇒ Future[Result]
 
