@@ -9,7 +9,7 @@ import scala.concurrent.duration.Duration
 
 package object filters {
 
-  def caching[RMT](duration: Duration)(implicit cache: CacheApi): Filter[RMT] =
+  def cached[RMT](duration: Duration)(implicit cache: CacheApi): Filter[RMT] =
     (req, result) ⇒ cache.getOrElse(req.body.toString)(result)
 
   def eTag[T](getETag: T ⇒ DateTime): Filter[T] = { (req, result) ⇒
