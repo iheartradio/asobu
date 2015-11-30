@@ -99,7 +99,7 @@ class SyntaxSpec extends PlaySpecification {
 
     "without extraction" >> {
       val controller = new Controller {
-        val withOutExtraction = handleParams(
+        val withOutExtraction = handle(
           process[RequestMsg] using actor `then` expect[ResponseMsg].respondJson(Ok(_))
         )
       }
@@ -117,7 +117,7 @@ class SyntaxSpec extends PlaySpecification {
 
     "with filter " >> { implicit ev: ExecutionEnv ⇒
 
-      val withFilter = handleParams(
+      val withFilter = handle(
         process[RequestMsg] using actor `then` expect[ResponseMsg].respond(Ok) `with` authentication
       )
       val action = withFilter("myId", "jon", 3.1)
@@ -196,8 +196,8 @@ class SyntaxSpec extends PlaySpecification {
         def remove(key: String): Unit = ???
       }
 
-      val endpoint = handleParams(
-        `with`(caching(3.hours) and authentication) {
+      val endpoint = handle(
+        (caching(3.hours) and authentication) {
           process[RequestMsg] using actor `then`
             (expect[ResponseMsg] respondJson (Ok(_)) `with` eTag(_.updated))
         }

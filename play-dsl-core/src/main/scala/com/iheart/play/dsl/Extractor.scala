@@ -23,7 +23,7 @@ object Extractor {
 
   val empty: Extractor[HNil] = apply(_ ⇒ HNil)
 
-  implicit def apply[Repr <: HList](f : Request[AnyContent] ⇒ Repr): Extractor[Repr] = fromTry(f andThen (Try[Repr](_)))
+  def apply[Repr <: HList](f : Request[AnyContent] ⇒ Repr): Extractor[Repr] = fromTry(f andThen (Try[Repr](_)))
 
   def fromEither[Repr <: HList](f : Request[AnyContent] ⇒ Future[Either[Result, Repr]]): Extractor[Repr] = {
     import scala.concurrent.ExecutionContext.Implicits.global

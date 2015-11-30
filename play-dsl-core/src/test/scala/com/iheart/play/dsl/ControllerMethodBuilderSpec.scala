@@ -32,7 +32,7 @@ object ControllerMethodBuilderSpec extends PlaySpecification {
     }
 
     "build directly from director" in {
-      val method = handleParams((rm: Request[ReqMessage]) ⇒ Future.successful(Ok(rm.body.name + rm.body.id)))
+      val method = handle((rm: Request[ReqMessage]) ⇒ Future.successful(Ok(rm.body.name + rm.body.id)))
 
       val req = FakeRequest()
 

@@ -14,8 +14,33 @@ import scala.concurrent.Future
 
 trait ControllerMethodBuilder {
 
+  object handle {
 
-  case class handle[RMT, ExtractedRepr <: HList, FullRepr <: HList, InputRepr <: HList, V <: HList, K <: HList, TempFull <: HList]
+    def apply[RMT, FullRepr <: HList, K <: HList, V <: HList]
+      (directive: Directive[RMT])
+      (implicit lgen: LabelledGeneric.Aux[RMT, FullRepr],
+        keys: Keys.Aux[FullRepr, K],
+        values: Values.Aux[FullRepr, V],
+        zip: ZipWithKeys.Aux[K, V, FullRepr],
+        align: Align[FullRepr, FullRepr]) =
+          new handle(Extractor.empty, directive)
+
+    def apply[RMT, ExtractedRepr <: HList, FullRepr <: HList, InputRepr <: HList, V <: HList, K <: HList, TempFull <: HList]
+      (extractor: Extractor[ExtractedRepr], directive: Directive[RMT])
+      (implicit lgen: LabelledGeneric.Aux[RMT, FullRepr],
+       restOf: RestOf.Aux[FullRepr, ExtractedRepr, InputRepr],
+       keys: Keys.Aux[InputRepr, K],
+       values: Values.Aux[InputRepr, V],
+       zip: ZipWithKeys.Aux[K, V, InputRepr],
+       prepend: Prepend.Aux[InputRepr, ExtractedRepr, TempFull],
+       align: Align[TempFull, FullRepr]): handle[RMT, ExtractedRepr, FullRepr, InputRepr, V, K, TempFull] = new handle(extractor, directive)
+  }
+
+  /**
+    *
+    * @tparam RMT request message type
+    */
+  class handle[RMT, ExtractedRepr <: HList, FullRepr <: HList, InputRepr <: HList, V <: HList, K <: HList, TempFull <: HList]
     (extractor: Extractor[ExtractedRepr], directive: Directive[RMT])
     (implicit lgen: LabelledGeneric.Aux[RMT, FullRepr],
      restOf: RestOf.Aux[FullRepr, ExtractedRepr, InputRepr],
@@ -36,8 +61,8 @@ trait ControllerMethodBuilder {
         val inputRecord: InputRepr = vs.zipWithKeys[K]
         extractor(req).flatMap {
           case Left(result) ⇒ Future.successful(result)
-          case Right(extraced) ⇒
-            val msg: RMT = combine(inputRecord, extraced)
+          case Right(extracted) ⇒
+            val msg: RMT = combine(inputRecord, extracted)
             directive(req.map(_ ⇒ msg))
         }
 
