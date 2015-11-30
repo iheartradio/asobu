@@ -59,6 +59,7 @@ object Syntax
   implicit class FilterDSL[RMT](self: Filter[RMT]) {
     import Filter._
     def and(that: Filter[RMT]) = self combine that
+    def apply[T <: RMT](directive: Directive[T]): Directive[T] = directive.filter(self)
   }
 
 
@@ -75,15 +76,6 @@ object Syntax
   def from[Repr <: HList] = Extractor.apply[Repr] _
 
   def fromAuthorized[AuthInfoT](ba: RequestHeader ⇒ Future[Either[String, AuthInfoT]]) = new AuthInfoExtractorBuilder[AuthInfoT](ba)
-
-  def handleParams[RMT, FullRepr <: HList, K <: HList, V <: HList]
-    (directive: Directive[RMT])
-    (implicit lgen: LabelledGeneric.Aux[RMT, FullRepr],
-     keys: Keys.Aux[FullRepr, K],
-     values: Values.Aux[FullRepr, V],
-     zip: ZipWithKeys.Aux[K, V, FullRepr],
-     align: Align[FullRepr, FullRepr]) =
-     handle(Extractor.empty, directive)
 
 
 }
