@@ -33,7 +33,9 @@ object Projects extends Build {
 
   val commonSettings = Seq(
     scalacOptions ++= Seq(
-      "-deprecation"
+      "-deprecation",
+      "-unchecked",
+      "-Xlint"
     )
   )
 
