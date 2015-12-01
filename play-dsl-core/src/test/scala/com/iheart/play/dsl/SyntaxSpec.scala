@@ -1,5 +1,6 @@
 package com.iheart.play.dsl
 
+import scala.reflect.ClassTag
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import play.api.cache.CacheApi
@@ -191,8 +192,8 @@ class SyntaxSpec extends PlaySpecification {
 
       implicit val cacheApi = new CacheApi {
         def set(key: String, value: Any, expiration: Duration): Unit = ???
-        def get[T: ClassManifest](key: String): Option[T] = ???
-        def getOrElse[A: ClassManifest](key: String, expiration: Duration)(orElse: ⇒ A): A = orElse
+        def get[T: ClassTag](key: String): Option[T] = ???
+        def getOrElse[A: ClassTag](key: String, expiration: Duration)(orElse: ⇒ A): A = orElse
         def remove(key: String): Unit = ???
       }
 
@@ -209,4 +210,6 @@ class SyntaxSpec extends PlaySpecification {
 
     }
   }
+
+
 }
