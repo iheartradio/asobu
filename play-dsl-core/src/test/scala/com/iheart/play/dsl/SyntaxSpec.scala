@@ -48,7 +48,7 @@ class SyntaxSpec extends PlaySpecification {
   import com.iheart.play.dsl.DefaultImplicits._
   import directives._
 
-  val authentication: Filter[Any] = (req, result) ⇒ {
+  val authenticated: Filter[Any] = (req, result) ⇒ {
     req.headers.get("sessionId") match {
       case Some(sessionId) if sessionId.toInt > 0 ⇒ result
       case _                                      ⇒ Future.successful(Unauthorized("invalid session"))
@@ -118,7 +118,7 @@ class SyntaxSpec extends PlaySpecification {
     "with filter " >> { implicit ev: ExecutionEnv ⇒
 
       val withFilter = handle(
-        process[RequestMsg] using actor `then` expect[ResponseMsg].respond(Ok) `with` authentication
+        process[RequestMsg] using actor `then` expect[ResponseMsg].respond(Ok) `with` authenticated
       )
       val action = withFilter("myId", "jon", 3.1)
 
@@ -197,7 +197,7 @@ class SyntaxSpec extends PlaySpecification {
       }
 
       val endpoint = handle(
-        (caching(3.hours) and authentication) {
+        (cached(3.hours) and authenticated) {
           process[RequestMsg] using actor `then`
             (expect[ResponseMsg] respondJson (Ok(_)) `with` eTag(_.updated))
         }
