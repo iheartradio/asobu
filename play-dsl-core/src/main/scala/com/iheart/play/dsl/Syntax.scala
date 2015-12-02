@@ -44,21 +44,23 @@ object Syntax
     }
   }
 
-  def `with`[RMT](filters: Filter[Any]*)(directive: Directive[RMT]): Directive[RMT] =
+  def using[RMT](filters: Filter[Any]*)(directive: Directive[RMT]): Directive[RMT] =
     directive.filter(filters.reduce(_ and _))
 
 
   def fromJson[T: Reads] = new extractors.JsonBodyExtractorBuilder[T]
 
   implicit class ProcessAnyDSL[RMT, PRT](self: Processor[RMT, PRT]) {
-    def expectAny(pf: PartialFunction[Any, Result]) = self next Directive(pf)
+    def expectAny(pf: PartialFunction[Any, Result]) = self flatMap Directive(pf)
 
-    def `then`[RT: ClassTag](d: Directive[RT])(implicit fb: FallBackDir) = self next (d fallback fb)
+    def next[RT: ClassTag](d: Directive[RT])(implicit fb: FallBackDir) = self flatMap (d fallback fb)
+    def >>[RT: ClassTag](d: Directive[RT])(implicit fb: FallBackDir) = next(d)
   }
 
   implicit class FilterDSL[RMT](self: Filter[RMT]) {
     import Filter._
     def and(that: Filter[RMT]) = self combine that
+    def >>[T <: RMT](directive: Directive[T]): Directive[T] = apply(directive)
     def apply[T <: RMT](directive: Directive[T]): Directive[T] = directive.filter(self)
   }
 
@@ -69,8 +71,6 @@ object Syntax
 
     def respond(result: Result) = directive(_ ⇒ result)
     def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]) = directive(t ⇒ tr(Json.toJson(t)))
-
-
   }
 
   def from[Repr <: HList] = Extractor.apply[Repr] _

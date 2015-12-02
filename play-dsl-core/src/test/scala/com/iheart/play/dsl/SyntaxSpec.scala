@@ -84,7 +84,7 @@ class SyntaxSpec extends PlaySpecification {
       val controller = new Controller {
         val combined = handle(
           fromJson[PartialRequestMessage].body and from(req ⇒ 'name ->> req.headers("my_name") :: HNil),
-          process[RequestMsg] using actor `then` expect[ResponseMsg].respondJson(Ok(_))
+          process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
         )
       }
 
@@ -101,7 +101,7 @@ class SyntaxSpec extends PlaySpecification {
     "without extraction" >> {
       val controller = new Controller {
         val withOutExtraction = handle(
-          process[RequestMsg] using actor `then` expect[ResponseMsg].respondJson(Ok(_))
+          process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
         )
       }
 
@@ -119,7 +119,7 @@ class SyntaxSpec extends PlaySpecification {
     "with filter " >> { implicit ev: ExecutionEnv ⇒
 
       val withFilter = handle(
-        process[RequestMsg] using actor `then` expect[ResponseMsg].respond(Ok) `with` authenticated
+        process[RequestMsg] using actor next expect[ResponseMsg].respond(Ok) `with` authenticated
       )
       val action = withFilter("myId", "jon", 3.1)
 
@@ -149,7 +149,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val handler = handle(
         fromAuthorized(SessionInfo)(si ⇒ 'id ->> si.sessionId :: HNil),
-        process[RequestMsg] using actor `then` expect[ResponseMsg].respondJson(Ok(_))
+        process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
       )
 
       val action = handler("mike", 3.4)
@@ -199,8 +199,9 @@ class SyntaxSpec extends PlaySpecification {
 
       val endpoint = handle(
         (cached(3.hours) and authenticated) {
-          process[RequestMsg] using actor `then`
-            (expect[ResponseMsg] respondJson (Ok(_)) `with` eTag(_.updated))
+          (process[RequestMsg] using actor) >> {
+            expect[ResponseMsg] respondJson (Ok(_)) filter eTag(_.updated)
+          }
         }
       )
 
@@ -210,6 +211,5 @@ class SyntaxSpec extends PlaySpecification {
 
     }
   }
-
 
 }
