@@ -26,8 +26,6 @@ trait ProcessorOps {
         f(req.map(_ ⇒ pr))
       }
     }
-
-    def next[FRT](another: Processor[PRT, FRT]): Processor[RMT, FRT] = flatMap(another)
   }
 
 }
