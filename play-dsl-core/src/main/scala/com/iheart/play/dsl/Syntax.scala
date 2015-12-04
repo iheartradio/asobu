@@ -1,6 +1,6 @@
 package com.iheart.play.dsl
 
-import com.iheart.play.dsl.directives.FallBackDir
+import com.iheart.play.dsl.directives.FallbackDir
 import com.iheart.play.dsl.extractors.AuthInfoExtractorBuilder
 import play.api.libs.json.{JsValue, Json, Writes, Reads}
 import play.api.mvc.{RequestHeader, Result}
@@ -53,8 +53,8 @@ object Syntax
   implicit class ProcessAnyDSL[RMT, PRT](self: Processor[RMT, PRT]) {
     def expectAny(pf: PartialFunction[Any, Result]) = self flatMap Directive(pf)
 
-    def next[RT: ClassTag](d: Directive[RT])(implicit fb: FallBackDir) = self flatMap (d fallback fb)
-    def >>[RT: ClassTag](d: Directive[RT])(implicit fb: FallBackDir) = next(d)
+    def next[RT: ClassTag](d: Directive[RT])(implicit fb: FallbackDir) = self flatMap (d fallback fb)
+    def >>[RT: ClassTag](d: Directive[RT])(implicit fb: FallbackDir) = next(d)
   }
 
   implicit class FilterDSL[RMT](self: Filter[RMT]) {
