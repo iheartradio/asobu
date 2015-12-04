@@ -11,7 +11,7 @@ import shapeless.{LabelledGeneric, HList}
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-object Syntax
+trait Syntax
   extends ProcessorOps
   with DirectiveOps
   with ExtractorOps
@@ -79,3 +79,5 @@ object Syntax
 
 
 }
+
+object Syntax extends Syntax
