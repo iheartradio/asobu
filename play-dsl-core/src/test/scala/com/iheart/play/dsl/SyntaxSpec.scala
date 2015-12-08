@@ -9,6 +9,7 @@ import play.api.mvc._
 import Results._
 import play.api.test.{ FakeRequest, PlaySpecification }
 import Syntax._
+import SyntaxFacilitators._
 import Extractor._
 import shapeless._
 import syntax.singleton._

@@ -11,19 +11,14 @@ import shapeless.{LabelledGeneric, HList}
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
+import SyntaxFacilitators._
+
 trait Syntax
   extends ProcessorOps
   with DirectiveOps
   with ExtractorOps
   with ControllerMethodBuilder
   with cats.syntax.SemigroupSyntax {
-
-
-  type Askable = Any ⇒ Future[Any]
-
-  trait AskableBuilder[T] {
-    def apply(t: T): Askable
-  }
 
   class processorBuilder[RMT] {
     def using[T](t: T)(implicit b: AskableBuilder[T]) = Processor[RMT, Any](b(t))
@@ -77,7 +72,14 @@ trait Syntax
 
   def fromAuthorized[AuthInfoT](ba: RequestHeader ⇒ Future[Either[String, AuthInfoT]]) = new AuthInfoExtractorBuilder[AuthInfoT](ba)
 
+}
 
+object SyntaxFacilitators {
+  type Askable = Any ⇒ Future[Any]
+
+  trait AskableBuilder[T] {
+    def apply(t: T): Askable
+  }
 }
 
 object Syntax extends Syntax
