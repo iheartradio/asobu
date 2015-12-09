@@ -26,12 +26,11 @@ trait Syntax
 
   def process[RMT] = new processorBuilder[RMT]
 
-
   implicit class DirectiveDSL[RMT: ClassTag](self: Directive[RMT]) {
 
     def `with`(f: Filter[RMT]) = self.filter(f)
 
-    def ifEmpty[InnerT](fieldExtractor: RMT ⇒ Option[InnerT]) = new Object {
+    case class ifEmpty[InnerT](fieldExtractor: RMT ⇒ Option[InnerT]) {
       def respond(alternative: Result) = {
         val f: Filter[RMT] = (req, result) ⇒ fieldExtractor(req.body).fold(Future.successful(alternative))(_ ⇒ result)
         self.`with`(f)
@@ -62,10 +61,9 @@ trait Syntax
 
 
   case class expect[RMT: ClassTag]() {
-    private def directive(f: RMT ⇒ Result) = Directive(f)
-
-    def respond(result: Result) = directive(_ ⇒ result)
-    def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]) = directive(t ⇒ tr(Json.toJson(t)))
+    def respond(f: RMT ⇒ Result): Directive[RMT] = Directive(f)
+    def respond(result: Result): Directive[RMT] = respond(_ ⇒ result)
+    def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]): Directive[RMT] = respond(t ⇒ tr(Json.toJson(t)))
   }
 
   def from[Repr <: HList] = Extractor.apply[Repr] _
