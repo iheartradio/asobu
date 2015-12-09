@@ -46,9 +46,9 @@ trait Syntax
   def fromJson[T: Reads] = new extractors.JsonBodyExtractorBuilder[T]
 
   implicit class ProcessAnyDSL[RMT, PRT](self: Processor[RMT, PRT]) {
-    def expectAny(pf: PartialFunction[Any, Result]) = self flatMap Directive(pf)
+    def expectAny(pf: PartialFunction[Any, Result]) = self combine Directive(pf)
 
-    def next[RT: ClassTag](d: Directive[RT])(implicit fb: FallbackDir) = self flatMap (d fallback fb)
+    def next[RT: ClassTag](d: Directive[RT])(implicit fb: FallbackDir) = self combine (d fallback fb)
     def >>[RT: ClassTag](d: Directive[RT])(implicit fb: FallbackDir) = next(d)
   }
 

@@ -20,6 +20,7 @@ import play.api.http.HeaderNames._
 
 object SyntaxSpec {
   case class RequestMsg(id: String, name: String, bar: Double)
+  case object SpecialRequest
 
   case class PartialRequestMessage(id: String, bar: Double)
 
@@ -28,6 +29,7 @@ object SyntaxSpec {
   class MyActor {
     def ask(any: Any): Future[Any] = any match {
       case RequestMsg(id, name, _) ⇒ Future.successful(ResponseMsg(id, "hello! " + name))
+      case SpecialRequest          ⇒ Future.successful(ResponseMsg("-1", "special"))
       case _                       ⇒ Future.successful("unrecognized")
     }
   }
@@ -59,7 +61,7 @@ class SyntaxSpec extends PlaySpecification {
 
   "end to end syntax" >> {
 
-    "with extraction" >> {
+    "with normal extraction" >> {
 
       val controller = new Controller {
         val withExtraction = handle(
@@ -78,6 +80,25 @@ class SyntaxSpec extends PlaySpecification {
       val bodyText: String = contentAsString(result)
       bodyText === "myId hello! mike"
 
+    }
+
+    "with body extraction" >> {
+
+      val controller = new Controller {
+        val combined = handle(
+          fromJson[RequestMsg].body,
+          process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
+        )
+      }
+
+      val req = FakeRequest(POST, "/").withJsonBody(Json.obj("id" → "myId", "bar" → 3.1, "name" → "mike"))
+
+      val result: Future[Result] = call(controller.combined(), req)
+
+      val respBody: JsValue = contentAsJson(result)
+
+      (respBody \ "id").as[String] === "myId"
+      (respBody \ "msg").as[String] === "hello! mike"
     }
 
     "with extraction combination" >> {
@@ -114,6 +135,24 @@ class SyntaxSpec extends PlaySpecification {
 
       (respBody \ "id").as[String] === "myId"
       (respBody \ "msg").as[String] === "hello! jon"
+
+    }
+
+    "without any fields" >> {
+      val controller = new Controller {
+        val withOutFields = handle(
+          process[SpecialRequest.type] using actor next expect[ResponseMsg].respondJson(Ok(_))
+        )
+      }
+
+      val req = FakeRequest()
+
+      val result: Future[Result] = call(controller.withOutFields(), req)
+
+      val respBody: JsValue = contentAsJson(result)
+
+      (respBody \ "id").as[String] === "-1"
+      (respBody \ "msg").as[String] === "special"
 
     }
 
@@ -189,7 +228,7 @@ class SyntaxSpec extends PlaySpecification {
     }
 
     "with multiple filters" >> { implicit ev: ExecutionEnv ⇒
-      import filters._
+      import Filters._
 
       implicit val cacheApi = new CacheApi {
         def set(key: String, value: Any, expiration: Duration): Unit = ???

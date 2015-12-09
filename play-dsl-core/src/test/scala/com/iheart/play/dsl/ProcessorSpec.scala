@@ -18,7 +18,7 @@ class ProcessorSpec extends PlaySpecification {
   "channel to a directive" >> { implicit ee: ExecutionEnv ⇒
     val p = Processor.synced[Int, String](_.toString)
     val d = Directive.constant[String](Ok)
-    val subject = p flatMap d
+    val subject = p combine d
 
     subject must beAnInstanceOf[Directive[Int]]
 
