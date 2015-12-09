@@ -61,10 +61,9 @@ trait Syntax
 
 
   case class expect[RMT: ClassTag]() {
-    private def directive(f: RMT ⇒ Result) = Directive(f)
-
-    def respond(result: Result) = directive(_ ⇒ result)
-    def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]) = directive(t ⇒ tr(Json.toJson(t)))
+    def respond(f: RMT ⇒ Result): Directive[RMT] = Directive(f)
+    def respond(result: Result): Directive[RMT] = respond(_ ⇒ result)
+    def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]): Directive[RMT] = respond(t ⇒ tr(Json.toJson(t)))
   }
 
   def from[Repr <: HList] = Extractor.apply[Repr] _
