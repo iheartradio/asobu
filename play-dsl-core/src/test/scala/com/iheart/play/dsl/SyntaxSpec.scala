@@ -228,7 +228,7 @@ class SyntaxSpec extends PlaySpecification {
     }
 
     "with multiple filters" >> { implicit ev: ExecutionEnv ⇒
-      import filters._
+      import Filters._
 
       implicit val cacheApi = new CacheApi {
         def set(key: String, value: Any, expiration: Duration): Unit = ???

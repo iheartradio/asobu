@@ -21,7 +21,7 @@ trait ProcessorOps {
   implicit class processorOps[-RMT, +PRT](self: Processor[RMT, PRT]) {
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    def flatMap[T](f: Request[PRT] ⇒ Future[T]): Request[RMT] ⇒ Future[T] = (req: Request[RMT]) ⇒ {
+    def combine[T](f: Processor[PRT, T]): Processor[RMT, T] = (req: Request[RMT]) ⇒ {
       self(req).flatMap { (pr: PRT) ⇒
         f(req.map(_ ⇒ pr))
       }
