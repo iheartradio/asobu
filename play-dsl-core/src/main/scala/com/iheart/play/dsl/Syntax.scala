@@ -26,12 +26,11 @@ trait Syntax
 
   def process[RMT] = new processorBuilder[RMT]
 
-
   implicit class DirectiveDSL[RMT: ClassTag](self: Directive[RMT]) {
 
     def `with`(f: Filter[RMT]) = self.filter(f)
 
-    def ifEmpty[InnerT](fieldExtractor: RMT ⇒ Option[InnerT]) = new Object {
+    case class ifEmpty[InnerT](fieldExtractor: RMT ⇒ Option[InnerT]) {
       def respond(alternative: Result) = {
         val f: Filter[RMT] = (req, result) ⇒ fieldExtractor(req.body).fold(Future.successful(alternative))(_ ⇒ result)
         self.`with`(f)
