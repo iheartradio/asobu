@@ -26,6 +26,8 @@ trait ProcessorOps {
         f(req.map(_ ⇒ pr))
       }
     }
+
+    def contraMap[T](f: T ⇒ RMT): Processor[T, PRT] = Processor.synced(f) combine self
   }
 
 }
