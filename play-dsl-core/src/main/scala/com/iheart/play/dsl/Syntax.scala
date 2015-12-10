@@ -31,7 +31,7 @@ trait Syntax
     case class ifEmpty[InnerT](fieldExtractor: RMT ⇒ Option[InnerT]) {
       def respond(alternative: Result) = {
         val f: Filter[RMT] = (req, result) ⇒ fieldExtractor(req.body).fold(Future.successful(alternative))(_ ⇒ result)
-        self.`with`(f)
+        self.filter(f)
       }
     }
   }
