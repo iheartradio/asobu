@@ -3,10 +3,8 @@ package com.iheart.play.dsl
 import com.iheart.play.dsl.directives.FallbackDir
 import com.iheart.play.dsl.extractors.AuthInfoExtractorBuilder
 import play.api.libs.json.{JsValue, Json, Writes, Reads}
-import play.api.mvc.{RequestHeader, Result}
-import shapeless.ops.hlist.{Align, ZipWithKeys}
-import shapeless.ops.record.{Values, Keys}
-import shapeless.{LabelledGeneric, HList}
+import play.api.mvc.{RequestHeader, Result, Results}
+import shapeless.HList
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -64,6 +62,7 @@ trait Syntax
     def respond(f: RMT ⇒ Result): Directive[RMT] = Directive(f)
     def respond(result: Result): Directive[RMT] = respond(_ ⇒ result)
     def respondJson(tr: JsValue ⇒ Result)(implicit writes: Writes[RMT]): Directive[RMT] = respond(t ⇒ tr(Json.toJson(t)))
+    def respondJson(r: Results#Status)(implicit writes: Writes[RMT]): Directive[RMT] = respond(t ⇒ r.apply(Json.toJson(t)))
   }
 
   def from[Repr <: HList] = Extractor.apply[Repr] _

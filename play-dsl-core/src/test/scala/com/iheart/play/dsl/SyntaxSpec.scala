@@ -189,7 +189,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val handler = handle(
         fromAuthorized(SessionInfo)(si ⇒ 'id ->> si.sessionId :: HNil),
-        process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
+        process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok)
       )
 
       val action = handler("mike", 3.4)
