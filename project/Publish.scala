@@ -6,7 +6,7 @@ object Publish {
 
   val bintraySettings = Seq(
     bintrayOrganization := Some("iheartradio"),
-    bintrayPackageLabels := Seq("play-framework", "swagger", "rest-api", "API", "documentation")
+    bintrayPackageLabels := Seq("play-framework", "DSL", "rest-api", "API", "documentation")
   )
 
   val publishingSettings = Seq(
@@ -14,9 +14,9 @@ object Publish {
     organization in ThisBuild := "com.iheart",
     publishMavenStyle := true,
     licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-    homepage := Some(url("http://iheartradio.github.io/play-swagger")),
-    scmInfo := Some(ScmInfo(url("https://github.com/iheartradio/play-swagger"),
-      "git@github.com:iheartradio/play-swagger.git")),
+    homepage := Some(url("http://iheartradio.github.io/play-dsl")),
+    scmInfo := Some(ScmInfo(url("https://github.com/iheartradio/play-dslr"),
+      "git@github.com:iheartradio/play-dsl.git")),
     pomIncludeRepository := { _ => false },
     publishArtifact in Test := false
   )
