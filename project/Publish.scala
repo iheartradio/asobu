@@ -15,7 +15,7 @@ object Publish {
     publishMavenStyle := true,
     licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     homepage := Some(url("http://iheartradio.github.io/play-dsl")),
-    scmInfo := Some(ScmInfo(url("https://github.com/iheartradio/play-dslr"),
+    scmInfo := Some(ScmInfo(url("https://github.com/iheartradio/play-dsl"),
       "git@github.com:iheartradio/play-dsl.git")),
     pomIncludeRepository := { _ => false },
     publishArtifact in Test := false
