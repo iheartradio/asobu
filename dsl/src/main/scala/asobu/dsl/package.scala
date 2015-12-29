@@ -1,7 +1,7 @@
 package asobu
 
 import cats.data.Xor
-import play.api.mvc.{AnyContent, Result, Request}
+import play.api.mvc.{AnyContent, Request, Result}
 import shapeless.HList
 
 import scala.concurrent.Future

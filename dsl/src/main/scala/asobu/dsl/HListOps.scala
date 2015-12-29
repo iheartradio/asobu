@@ -1,7 +1,7 @@
 package asobu.dsl
 
 import shapeless.ops.hlist.Remove
-import shapeless.{::, HNil, HList}
+import shapeless.{::, HList, HNil}
 
 object HListOps {
   trait RestOf[L <: HList, SL <: HList] {

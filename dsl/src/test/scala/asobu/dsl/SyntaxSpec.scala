@@ -1,22 +1,20 @@
 package asobu.dsl
 
-import scala.reflect.ClassTag
+import asobu.dsl.Syntax._
+import asobu.dsl.SyntaxFacilitators._
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import play.api.cache.CacheApi
-import play.api.libs.json.{JsString, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Results._
 import play.api.mvc._
-import Results._
 import play.api.test.{FakeRequest, PlaySpecification}
-import Syntax._
-import SyntaxFacilitators._
-import Extractor._
 import shapeless._
-import syntax.singleton._
+import shapeless.syntax.singleton._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import play.api.http.HeaderNames._
+import scala.reflect.ClassTag
 
 object SyntaxSpec {
   case class RequestMsg(id: String, name: String, bar: Double)
@@ -50,7 +48,6 @@ case class ProcessResult(content: Option[String])
 class SyntaxSpec extends PlaySpecification {
   import SyntaxSpec._
   import asobu.dsl.DefaultImplicits._
-  import directives._
 
   val authenticated: Filter[Any] = (req, result) ⇒ {
     req.headers.get("sessionId") match {

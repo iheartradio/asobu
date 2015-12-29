@@ -1,17 +1,15 @@
 package asobu.dsl
 
-import Syntax._
+import asobu.dsl.Syntax._
 import org.specs2.concurrent.ExecutionEnv
-import play.api.libs.json.JsString
-import play.api.mvc.{Request, Result}
+import play.api.mvc.Result
 import play.api.mvc.Results._
 import play.api.test.{FakeRequest, PlaySpecification}
-import scala.concurrent.Future
 
+import scala.concurrent.Future
 import scala.reflect._
 
 class DirectiveSpec extends PlaySpecification {
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   "construct directive from partial function" >> { implicit ee: ExecutionEnv ⇒
     val pf: PartialFunction[Any, Future[Result]] = {
@@ -27,7 +25,6 @@ class DirectiveSpec extends PlaySpecification {
 
   "fallback" >> {
     "fall back to the other directive" >> { implicit ee: ExecutionEnv ⇒
-      import Directive._
 
       val fallbackTo: Directive[Any] = {
         case _ ⇒ Future.successful(InternalServerError)

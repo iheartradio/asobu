@@ -1,8 +1,8 @@
 package asobu.dsl.akka
 
-import _root_.akka.actor.{ActorSelection, ActorRef}
-import _root_.akka.util.Timeout
+import _root_.akka.actor.{ActorRef, ActorSelection}
 import _root_.akka.pattern.ask
+import _root_.akka.util.Timeout
 import asobu.dsl.SyntaxFacilitators._
 
 trait Builders {

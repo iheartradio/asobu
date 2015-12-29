@@ -2,9 +2,9 @@ package asobu.dsl
 
 import cats.data.{Xor, XorT}
 import play.api.mvc.Results._
-import play.api.mvc.{Result, AnyContent, Request}
+import play.api.mvc.{AnyContent, Request, Result}
 import shapeless.ops.hlist.Prepend
-import shapeless.{HNil, HList}
+import shapeless.{HList, HNil}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}

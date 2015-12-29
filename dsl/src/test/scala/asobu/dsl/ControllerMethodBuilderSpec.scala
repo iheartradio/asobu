@@ -1,15 +1,15 @@
 package asobu.dsl
 
+import asobu.dsl.Syntax._
+import play.api.mvc.Results._
 import play.api.mvc.{EssentialAction, Request}
 import play.api.test._
 import shapeless.HNil
 import shapeless.syntax.singleton._
-import play.api.mvc.Results._
+
 import scala.concurrent.Future
-import Syntax._
 
 object ControllerMethodBuilderSpec extends PlaySpecification {
-  import Helpers._
 
   case class ReqMessage(age: Int, name: String, id: Int)
 

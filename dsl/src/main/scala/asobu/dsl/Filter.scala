@@ -3,7 +3,6 @@ package asobu.dsl
 import cats._
 import org.joda.time.DateTime
 import play.api.cache.CacheApi
-import syntax.all._
 import play.api.mvc.Results._
 
 import scala.concurrent.Future
@@ -26,8 +25,8 @@ trait Filters {
     (req, result) ⇒ cache.getOrElse(req.body.toString)(result)
 
   def eTag[T](getETag: T ⇒ DateTime): Filter[T] = { (req, result) ⇒
-    import play.api.libs.concurrent.Execution.Implicits._
     import play.api.http.HeaderNames.ETAG
+    import play.api.libs.concurrent.Execution.Implicits._
     val eTAGInRequest = req.headers.get(ETAG)
     val rse = getETag(req.body)
     eTAGInRequest match {

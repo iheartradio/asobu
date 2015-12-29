@@ -1,15 +1,14 @@
 package asobu.dsl
 
+import asobu.dsl.SyntaxFacilitators._
 import asobu.dsl.directives.FallbackDir
 import asobu.dsl.extractors.AuthInfoExtractorBuilder
-import play.api.libs.json.{JsValue, Json, Writes, Reads}
+import play.api.libs.json.{JsValue, Json, Reads, Writes}
 import play.api.mvc.{RequestHeader, Result, Results}
 import shapeless.HList
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
-
-import SyntaxFacilitators._
 
 trait CompositionSyntax
   extends ProcessorOps
