@@ -2,13 +2,13 @@ import sbt._
 import Keys._
 
 object Projects extends Build {
-  lazy val playDSLAll = Project("play-dsl-all", file("."))
-    .aggregate(playDSL, playDSLAkka)
+  lazy val root = Project("root", file("."))
+    .aggregate(dsl, dslAkka)
     .settings(commonSettings:_*)
     .settings(noPublishing: _*)
     .settings(Testing.settings: _*)
 
-  lazy val playDSL = Project("play-dsl", file("play-dsl-core"))
+  lazy val dsl = Project("asobu-dsl", file("dsl"))
     .settings(
       commonSettings ++
       Dependencies.settings ++
@@ -17,8 +17,9 @@ object Projects extends Build {
       Testing.settings: _*
     )
 
-  lazy val playDSLAkka = Project("play-dsl-akka", file("play-dsl-akka"))
-    .dependsOn(playDSL % "compile->compile;test->test")
+  lazy val dslAkka = Project("asobu-dsl-akka", file("dsl-akka"))
+    .dependsOn(dsl)
+    .aggregate(dsl)
     .settings(
       commonSettings ++
       Dependencies.settings ++
