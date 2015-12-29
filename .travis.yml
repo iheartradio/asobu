@@ -16,4 +16,4 @@ script:
   - sbt clean coverage test
 
 after_success:
-  - sbt coverageReport codacyCoverage
+  - sbt coverageReport coverageAggregate codacyCoverage
