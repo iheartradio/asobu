@@ -11,11 +11,11 @@ import scala.reflect.ClassTag
 
 import SyntaxFacilitators._
 
-trait Syntax
+
+trait CompositionSyntax
   extends ProcessorOps
   with DirectiveOps
   with ExtractorOps
-  with ControllerMethodBuilder
   with cats.syntax.SemigroupSyntax {
 
   class processorBuilder[RMT] {
@@ -70,6 +70,8 @@ trait Syntax
   def fromAuthorized[AuthInfoT](ba: RequestHeader ⇒ Future[Either[String, AuthInfoT]]) = new AuthInfoExtractorBuilder[AuthInfoT](ba)
 
 }
+
+trait Syntax extends CompositionSyntax with ControllerMethodBuilder
 
 object SyntaxFacilitators {
   type Askable = Any ⇒ Future[Any]
