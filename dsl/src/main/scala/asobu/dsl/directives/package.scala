@@ -10,7 +10,7 @@ import Syntax._
 
 package object directives {
 
-  @implicitNotFound("You need to provide an implicit fall back directive to handle mismatches. You can use the default one by \n import play.akka.DefaultImplicits._ ")
+  @implicitNotFound("You need to provide an implicit fall back directive to handle mismatches. You can use the default one by \n import asobu.dsl.DefaultImplicits._ ")
   type FallbackDir = PartialDirective[Any]
 
   def fallbackTo500: FallbackDir = PartialDirective.synced[Any] {
