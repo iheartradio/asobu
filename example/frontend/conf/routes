@@ -1,20 +1,3 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# ~~~~
-
-# Home page
-GET   /                         controllers.Application.index
-
-# JavaScript routes object
-GET   /jsroutes.js              controllers.Application.jsRoutes()
-
-# Routes used by Angular
-# ~~~~
-
-GET   /api/info                 controllers.BuildInfoController.info
-GET   /api/cluster/nodes        controllers.Cluster.clusterNodesWebsocket
-GET   /api/cluster/metrics      controllers.Cluster.clusterMetricsWebsocket
-GET   /api/services/factorial   @controllers.services.Factorial.websocket
 
 GET   /api/normal/factorialOf/:n   @controllers.services.Factorial.calcNormal(n: Int)
 GET   /api/dsl/factorialOf/:n   @controllers.services.Factorial.calcDsl(n: Int)

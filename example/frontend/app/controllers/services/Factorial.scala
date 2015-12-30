@@ -8,10 +8,6 @@ import api.FactorialService.Compute
 import play.api.mvc._
 import akka.pattern.ask
 import play.api.libs.json._
-import play.api.Play.current
-
-import actors.services.FactorialWebsocketActor
-import actors.services.FactorialWebsocketActor._
 import api.FactorialService
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
@@ -19,11 +15,11 @@ import play.api.libs.concurrent.Execution.Implicits._
 class Factorial @Inject() (repoProvider: ClusterAgentRepoProvider) extends Controller {
   val repo = repoProvider.get()
   implicit val to = Timeout(3.seconds)
-
-  def websocket() = WebSocket.acceptWithActor[FactorialService.Compute, FactorialService.Result] { implicit request =>
-    FactorialWebsocketActor.props(_)
+  implicit val binIntFormat = new Format[BigInt] {
+    def reads(json: JsValue): JsResult[BigInt] = json.validate[JsNumber].map(_.value.toBigInt())
+    def writes(o: BigInt): JsValue = JsNumber(o.toLong)
   }
-
+  implicit val format = Json.format[FactorialService.Result]
 //  normal way
   def calcNormal(number: Int) = Action.async { _ ⇒
     repo.factorial ? Compute(number) map {

@@ -28,8 +28,6 @@ lazy val frontend = (project in file("frontend"))
     .settings(
         name := "cluster-play-frontend",
         libraryDependencies ++= (Dependencies.frontend  ++ Seq(filters, cache)),
-        pipelineStages := Seq(rjs, digest, gzip),
-        RjsKeys.paths += ("jsRoutes" -> ("/jsroutes" -> "empty:")),
         javaOptions ++= Seq(
             "-Djava.library.path=" + (baseDirectory.value.getParentFile / "backend" / "sigar" ).getAbsolutePath,
             "-Xms128m", "-Xmx1024m"),
