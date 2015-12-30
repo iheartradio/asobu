@@ -37,7 +37,7 @@ class WorkerActor extends Actor with ActorLogging {
  */
 object FactorialBackend {
 
-  def startOn(system: ActorSystem) {
+  def startOn(system: ActorSystem): ActorRef = {
     system.actorOf(Props[WorkerActor].withRouter(RoundRobinPool(100)), name = "factorialBackend")
   }
 

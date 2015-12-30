@@ -2,19 +2,19 @@ package asobu.dsl
 
 import asobu.dsl.SyntaxFacilitators._
 import asobu.dsl.directives.FallbackDir
-import asobu.dsl.extractors.AuthInfoExtractorBuilder
+import asobu.dsl.extractors.{JsonBodyExtractor, AuthInfoExtractorBuilder}
 import play.api.libs.json.{JsValue, Json, Reads, Writes}
 import play.api.mvc.{RequestHeader, Result, Results}
 import shapeless.HList
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
-
 trait CompositionSyntax
-  extends ProcessorOps
-  with DirectiveOps
-  with ExtractorOps
-  with cats.syntax.SemigroupSyntax {
+    extends ProcessorOps
+    with DirectiveOps
+    with ExtractorFunctions
+    with CatsInstances
+    with cats.syntax.AllSyntax {
 
   class processorBuilder[RMT] {
     def using[T](t: T)(implicit b: AskableBuilder[T]) = Processor[RMT, Any](b(t))
@@ -34,10 +34,16 @@ trait CompositionSyntax
     }
   }
 
+  class JsonBodyExtractorBuilder[T: Reads] {
+    def body = JsonBodyExtractor.body[T]
+  }
+
+  def from = composeF
+
   def using[RMT](filters: Filter[Any]*)(directive: Directive[RMT]): Directive[RMT] =
     directive.filter(filters.reduce(_ and _))
 
-  def fromJson[T: Reads] = new extractors.JsonBodyExtractorBuilder[T]
+  def fromJson[T: Reads] = new JsonBodyExtractorBuilder[T]
 
   implicit class ProcessAnyDSL[RMT, PRT](self: Processor[RMT, PRT]) {
     def expectAny(pf: PartialFunction[Any, Result]) = self combine Directive(pf)
@@ -60,8 +66,6 @@ trait CompositionSyntax
     def respondJson(r: Results#Status)(implicit writes: Writes[RMT]): Directive[RMT] = respond(t ⇒ r.apply(Json.toJson(t)))
   }
 
-  def from[Repr <: HList] = Extractor.apply[Repr] _
-
   def fromAuthorized[AuthInfoT](ba: RequestHeader ⇒ Future[Either[String, AuthInfoT]]) = new AuthInfoExtractorBuilder[AuthInfoT](ba)
 
 }
@@ -77,3 +81,4 @@ object SyntaxFacilitators {
 }
 
 object Syntax extends Syntax
+

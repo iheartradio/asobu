@@ -12,7 +12,9 @@ object Format {
     import scalariform.formatter.preferences._
     FormattingPreferences()
       .setPreference(RewriteArrowSymbols, true)
-      .setPreference(AlignParameters, true)
+      .setPreference(AlignParameters, false)
+      .setPreference(DoubleIndentClassDeclaration, true)
+      .setPreference(AlignArguments, true)
       .setPreference(AlignSingleLineCaseStatements, true)
   }
 

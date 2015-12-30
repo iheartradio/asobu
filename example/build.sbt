@@ -1,33 +1,43 @@
 import NativePackagerHelper._
 
+val resolverSetting = resolvers ++= Seq(
+  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.bintrayRepo("scalaz", "releases"),
+  Resolver.jcenterRepo
+)
+
+
 val commonSettings = Seq(
-  organization := "your.organization",
+  organization := "asobu",
   version := "2.4.3",
   scalaVersion := "2.11.7",
-  //scalaVersion := "2.10.4",
-  
+
   // build info
   buildInfoPackage := "meta",
-  buildInfoOptions += BuildInfoOption.ToJson,
+  buildInfoOptions ++= Seq(BuildInfoOption.ToJson,
+                          BuildInfoOption.Traits("asobu.distributed.service.BuildNumber")),
   buildInfoKeys := Seq[BuildInfoKey](
-    name, version, scalaVersion,
-    "sbtNativePackager" -> "1.0.0"
-  )
+    name, version, scalaVersion, buildInfoBuildNumber
+  ),
+  resolverSetting
 )
 
 lazy val example = (project in file("."))
   .settings(
-    name := "play-akka-cluster"
+    name := "asobu-example"
   )
   .aggregate(api, frontend, backend)
   
 lazy val frontend = (project in file("frontend"))
   .dependsOn(asobuDSL)
+  .dependsOn(asobuDistributed)
   .dependsOn(asobuDSLAkka)
   .enablePlugins(PlayScala, BuildInfoPlugin, JavaAppPackaging)
     .settings(
         name := "cluster-play-frontend",
-        libraryDependencies ++= (Dependencies.frontend  ++ Seq(filters, cache)),
+        libraryDependencies ++= (Dependencies.frontend  ++ Dependencies.kanaloa ++ Seq(filters, cache)),
+        routesGenerator := InjectedRoutesGenerator,
         javaOptions ++= Seq(
             "-Djava.library.path=" + (baseDirectory.value.getParentFile / "backend" / "sigar" ).getAbsolutePath,
             "-Xms128m", "-Xmx1024m"),
@@ -41,7 +51,9 @@ lazy val frontend = (project in file("frontend"))
     ).dependsOn(api)
 
 lazy val backend = (project in file("backend"))
-    .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
+  .dependsOn(asobuDSL)
+  .dependsOn(asobuDistributed)
+  .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
     .settings(
         name := "cluster-akka-backend",
         libraryDependencies ++= Dependencies.backend,
@@ -59,14 +71,16 @@ lazy val backend = (project in file("backend"))
     ).dependsOn(api)
     
 lazy val api = (project in file("api"))
-    .enablePlugins(BuildInfoPlugin)
-    .settings(
+  .dependsOn(asobuDistributed)
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
         name := "cluster-api",
         libraryDependencies ++= Dependencies.backend,
         commonSettings
     )
 
 lazy val asobuDSL = ProjectRef(file("../"), "asobu-dsl")
+lazy val asobuDistributed = ProjectRef(file("../"), "asobu-distributed")
 lazy val asobuDSLAkka = ProjectRef(file("../"), "asobu-dsl-akka")
 
 //

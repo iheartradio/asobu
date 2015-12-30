@@ -1,10 +1,31 @@
 
+###
+# summary: Get factorial
+# description: an example of writing a play action in the normal way
+###
 GET   /api/normal/factorialOf/:n   @controllers.services.Factorial.calcNormal(n: Int)
+
+###
+# summary: Get factorial
+# description: an example of writing a play action in asobu DSL
+###
 GET   /api/dsl/factorialOf/:n   @controllers.services.Factorial.calcDsl(n: Int)
 
 
-# Static
-# ~~~~
 
-# Map static resources from the /public folder to the /assets URL path
+### NoDocs ### Map static resources from the /public folder to the /assets URL path
 GET   /assets/*file             controllers.Assets.versioned(path="/public", file: Asset)
+
+
+###
+# summary: swagger definition
+# description: for swagger UI to consume
+###
+GET   /docs/swagger.json         @controllers.ApiDocuments.specs
+
+### NoDocs ### serving swagger ui
+GET   /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+
+
+### NoDocs ### Distributed router comes last
+->    /                         asobu.distributed.gateway.GatewayRouter

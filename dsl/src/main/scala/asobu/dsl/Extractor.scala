@@ -1,51 +1,112 @@
 package asobu.dsl
 
-import cats.data.{Xor, XorT}
+import cats.data.{Kleisli, Xor, XorT}
 import play.api.mvc.Results._
 import play.api.mvc.{AnyContent, Request, Result}
-import shapeless.ops.hlist.Prepend
-import shapeless.{HList, HNil}
+import shapeless.ops.hlist._
+import shapeless._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import cats.data.Xor._
+import ExtractResult._
+import cats.syntax.all._
+import CatsInstances._
+import concurrent.ExecutionContext.Implicits.global
+import cats.sequence._
 
-object Extractor {
-
-  def fromTry[Repr <: HList](f: Request[AnyContent] ⇒ Try[Repr]): Extractor[Repr] = { req ⇒
-    Future.successful {
-      f(req) match {
-        case Success(repr) ⇒ Right(repr)
-        case Failure(ex)   ⇒ Left(BadRequest(ex.getMessage))
-      }
-    }
-  }
-
-  val empty: Extractor[HNil] = apply(_ ⇒ HNil)
-
-  def apply[Repr <: HList](f: Request[AnyContent] ⇒ Repr): Extractor[Repr] = fromTry(f andThen (Try[Repr](_)))
-
-  def fromEither[Repr <: HList](f: Request[AnyContent] ⇒ Future[Either[Result, Repr]]): Extractor[Repr] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    f.andThen(_.map(Xor.fromEither))
-  }
-}
+object Extractor extends ExtractorFunctions
 
 trait ExtractorOps {
-  import CatsInstances._
+  import Extractor._
 
-  implicit class extractorOps[Repr <: HList](self: Extractor[Repr]) {
-    def and[ThatR <: HList, ResultR <: HList](that: Extractor[ThatR])(
+  implicit class extractorOps1[TFrom, Repr <: HList](self: Extractor[TFrom, Repr]) {
+    def and[ThatR <: HList, ResultR <: HList](that: Extractor[TFrom, ThatR])(
       implicit
       prepend: Prepend.Aux[Repr, ThatR, ResultR]
-    ): Extractor[ResultR] = { req ⇒
+    ): Extractor[TFrom, ResultR] = combine(self, that)
+  }
 
-      (for {
-        eitherRepr ← XorT(self(req))
-        eitherThatR ← XorT(that(req))
-      } yield eitherRepr ++ eitherThatR).value
+  implicit class ExtractorOps2[A, B](self: Extractor[A, B]) {
+
+    def ensure(ifLeft: ⇒ Result)(f: B ⇒ Boolean)(implicit ex: ExecutionContext): Extractor[A, B] =
+      self.mapF(_.ensure(ifLeft)(f))
+
+    def allFields(implicit gen: LabelledGeneric[B]): Extractor[A, gen.Repr] = self.map(gen.to(_))
+  }
+}
+
+object ExtractorOps extends ExtractorOps
+
+trait ExtractorFunctions extends ExtractorOps {
+  implicit def fromFunction[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = Kleisli(f)
+
+  implicit def fromFunctionXorT[TFrom, T](f: TFrom ⇒ XorTF[T]): Extractor[TFrom, T] = f.andThen(ExtractResult(_))
+
+  def empty[TFrom]: Extractor[TFrom, HNil] = apply(_ ⇒ HNil)
+
+  def apply[TFrom, T](f: TFrom ⇒ T): Extractor[TFrom, T] = f map pure
+
+  /**
+   * extractor from a list of functions
+   * e.g. from(a = (_:Request[AnyContent]).headers("aKay"))
+   */
+  object composeF extends shapeless.RecordArgs {
+    def applyRecord[TFrom, Repr <: HList, Out <: HList](repr: Repr)(
+      implicit
+      seq: RecordSequencer.Aux[Repr, TFrom ⇒ Out]
+    ): Extractor[TFrom, Out] = {
+      Extractor(seq(repr))
     }
   }
 
+  /**
+   * extractor composed of several extractors
+   * e.g. compose(a = RequestExtractor(_.headers("aKey"))
+   * or
+   * compose(a = header("aKey"))  //header is method that constructor a more robust Extractor
+   * This function needs an implicit ExecutionContext in scope otherwise it will complain that
+   * RecordSequencer can't be find, because Functor of Future can't be found.
+   */
+  def compose = sequenceRecord
+
+  /**
+   * combine two extractors into one that takes two inputs as a tuple and returns a concated list of the two results
+   *
+   * @return
+   */
+  def zip[FromA, FromB, LA <: HList, LB <: HList, LOut <: HList](
+    ea: Extractor[FromA, LA],
+    eb: Extractor[FromB, LB]
+  )(
+    implicit
+    prepend: Prepend.Aux[LA, LB, LOut]
+  ): Extractor[(FromA, FromB), LOut] = Extractor.fromFunction { (p: (FromA, FromB)) ⇒
+    val (a, b) = p
+    for {
+      ra ← ea.run(a)
+      rb ← eb.run(b)
+    } yield ra ++ rb
+  }
+
+  def combine[TFrom, L1 <: HList, L2 <: HList, Out <: HList](self: Extractor[TFrom, L1], that: Extractor[TFrom, L2])(
+    implicit
+    prepend: Prepend.Aux[L1, L2, Out]
+  ): Extractor[TFrom, Out] = {
+    (self |@| that) map (_ ++ _)
+  }
+
 }
+
+object RequestExtractor {
+  type Void = RequestExtractor[HNil]
+  val empty: Void = Extractor.empty[Request[AnyContent]]
+
+  def apply[T](f: Request[AnyContent] ⇒ T): RequestExtractor[T] = Extractor(f)
+}
+
+trait DefaultExtractorImplicits {
+  implicit val ifFailure: FallbackResult = e ⇒ BadRequest(e.getMessage)
+}
+
+object DefaultExtractorImplicits extends DefaultExtractorImplicits
 
