@@ -3,26 +3,43 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val play = "[2.3.0, 2.4.+)"
+    val play = "2.4.6"
     val specs2 = "3.6.6"
-    val akka = "[2.3.0, 2.4.+)"
+    val akka = "2.4.2"
   }
+
+  val resolverSetting = resolvers ++= Seq(
+    Resolver.sonatypeRepo("releases"),
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.bintrayRepo("scalaz", "releases"),
+    Resolver.bintrayRepo("kailuowang", "maven")
+  )
+
 
   val play = Seq(
     "com.typesafe.play" %% "play" % Versions.play % "provided",
     "com.typesafe.play" %% "play-json" % Versions.play % "provided",
-    "com.typesafe.play" %% "play-cache" % Versions.play % "provided"
+    "com.typesafe.play" %% "play-cache" % Versions.play % "provided",
+    "com.typesafe.play" %% "routes-compiler" % Versions.play
   )
 
-  val shapeless = Seq("com.chuusai" %% "shapeless" % "2.2.5")
-  val cat = Seq("org.spire-math" %% "cats" % "0.3.0")
+  val typelevel = Seq(
+    "org.typelevel" %% "cats" % "0.5.0-SNAPSHOT",
+    "com.milessabin" %% "kittens" % "1.0.0-SNAPSHOT"
+  )
+
 
   val yaml = Seq(
     "org.yaml" % "snakeyaml" % "1.16"
   )
 
   val akka = Seq(
-    "com.typesafe.akka" %% "akka-actor" % Versions.akka % "provided"
+    "com.typesafe.akka" %% "akka-actor" % Versions.akka % "provided",
+    "com.typesafe.akka" %% "akka-cluster" % Versions.akka % "provided",
+    "com.typesafe.akka" %% "akka-cluster-tools" % Versions.akka % "provided",
+    "com.typesafe.akka" %% "akka-cluster-metrics" % Versions.akka % "provided",
+    "com.typesafe.akka" %% "akka-distributed-data-experimental" % Versions.akka,
+    "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test"
   )
 
   val test = Seq(
@@ -31,15 +48,16 @@ object Dependencies {
     "org.specs2" %% "specs2-mock" % Versions.specs2 % "test"
   )
 
-  val settings = Seq(
-    libraryDependencies ++= play ++ test ++ shapeless ++ cat,
-    scalaVersion in ThisBuild := "2.11.7",
-    resolvers ++= Seq(
-      Resolver.sonatypeRepo("releases"),
-      Resolver.sonatypeRepo("snapshots"),
-      Resolver.bintrayRepo("scalaz", "releases")
-    ),
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+  val simulacrum = Seq(
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.7.0"
   )
+
+  val settings = Seq(
+    libraryDependencies ++= play ++ test ++ typelevel,
+    scalaVersion in ThisBuild := "2.11.7",
+    resolverSetting,
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+  ) ++ simulacrum
 
 }

@@ -1,10 +1,13 @@
 package asobu.dsl
 
+import asobu.dsl
+import asobu.dsl._
 import asobu.dsl.Syntax._
 import asobu.dsl.SyntaxFacilitators._
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import play.api.cache.CacheApi
+import play.api.http.Status._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Results._
 import play.api.mvc._
@@ -18,6 +21,7 @@ import scala.reflect.ClassTag
 
 object SyntaxSpec {
   case class RequestMsg(id: String, name: String, bar: Double)
+  case class RequestMsgWithSession(sessionId: String, name: String, bar: Double)
   case object SpecialRequest
 
   case class PartialRequestMessage(id: String, bar: Double)
@@ -26,9 +30,10 @@ object SyntaxSpec {
 
   class MyActor {
     def ask(any: Any): Future[Any] = any match {
-      case RequestMsg(id, name, _) ⇒ Future.successful(ResponseMsg(id, "hello! " + name))
-      case SpecialRequest          ⇒ Future.successful(ResponseMsg("-1", "special"))
-      case _                       ⇒ Future.successful("unrecognized")
+      case RequestMsg(id, name, _)                   ⇒ Future.successful(ResponseMsg(id, "hello! " + name))
+      case RequestMsgWithSession(sessionId, name, _) ⇒ Future.successful(ResponseMsg(sessionId, "hello! " + name))
+      case SpecialRequest                            ⇒ Future.successful(ResponseMsg("-1", "special"))
+      case _                                         ⇒ Future.successful("unrecognized")
     }
   }
   val actor = new MyActor()
@@ -39,6 +44,7 @@ object SyntaxSpec {
 
   implicit val ff = Json.format[ResponseMsg]
   implicit val rff = Json.format[RequestMsg]
+  implicit val rsff = Json.format[RequestMsgWithSession]
   implicit val pff = Json.format[PartialRequestMessage]
 
 }
@@ -62,7 +68,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val controller = new Controller {
         val withExtraction = handle(
-          from(req ⇒ 'name ->> req.headers("my_name") :: HNil),
+          from(name = (_: Request[AnyContent]).headers("my_name")),
           process[RequestMsg] using actor
             expectAny {
               case ResponseMsg(id, msg, _) ⇒ Ok(s"${id} ${msg}")
@@ -83,7 +89,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val controller = new Controller {
         val combined = handle(
-          fromJson[RequestMsg].body,
+          fromJson[RequestMsg].body.allFields,
           process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
         )
       }
@@ -102,7 +108,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val controller = new Controller {
         val combined = handle(
-          fromJson[PartialRequestMessage].body and from(req ⇒ 'name ->> req.headers("my_name") :: HNil),
+          fromJson[PartialRequestMessage].body.allFields and from(name = (_: Request[AnyContent]).headers("my_name")),
           process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
         )
       }
@@ -132,6 +138,26 @@ class SyntaxSpec extends PlaySpecification {
 
       (respBody \ "id").as[String] === "myId"
       (respBody \ "msg").as[String] === "hello! jon"
+
+    }
+
+    case class SomeOtherMessage(boo: String)
+    "failure when unexpected Message" >> { implicit ev: ExecutionEnv ⇒
+      val controller = new Controller {
+        val withOutExtraction = handle(
+          process[RequestMsg] using actor next expect[SomeOtherMessage].respond(Ok)
+        )
+      }
+
+      val req = FakeRequest()
+
+      val result: Future[Result] = call(controller.withOutExtraction("myId", "jon", 3.1), req)
+
+      result.map(_.header.status) must be_==(INTERNAL_SERVER_ERROR).await
+
+      val respBody: JsValue = contentAsJson(result)
+
+      (respBody \ "error").as[String] === s"unexpected result ${classOf[ResponseMsg]} back"
 
     }
 
@@ -175,17 +201,17 @@ class SyntaxSpec extends PlaySpecification {
 
     case class SessionInfo(sessionId: String)
 
+    def GetSessionInfo(req: RequestHeader): Future[Either[String, SessionInfo]] = Future.successful(
+      req.headers.get("sessionId") match {
+        case Some(sid) ⇒ Right(new SessionInfo(sid))
+        case None      ⇒ Left("SessionId is missing from header")
+      }
+    )
+
     "with AuthExtractor" >> { implicit ev: ExecutionEnv ⇒
 
-      def SessionInfo(req: RequestHeader): Future[Either[String, SessionInfo]] = Future.successful(
-        req.headers.get("sessionId") match {
-          case Some(sid) ⇒ Right(new SessionInfo(sid))
-          case None      ⇒ Left("SessionId is missing from header")
-        }
-      )
-
       val handler = handle(
-        fromAuthorized(SessionInfo)(si ⇒ 'id ->> si.sessionId :: HNil),
+        fromAuthorized(GetSessionInfo).from(id = (_: SessionInfo).sessionId),
         process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok)
       )
 

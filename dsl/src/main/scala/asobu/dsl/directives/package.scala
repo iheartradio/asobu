@@ -14,8 +14,10 @@ package object directives {
   type FallbackDir = PartialDirective[Any]
 
   def fallbackTo500: FallbackDir = PartialDirective.synced[Any] {
-    case e: Throwable ⇒ InternalServerError(Json.obj("error" → e.getMessage))
-    case m            ⇒ InternalServerError(new MatchError(m).getMessage)
+    case e: Throwable ⇒ errorOf(e.toString)
+    case m            ⇒ errorOf(s"unexpected result ${m.getClass} back")
   }
+
+  private def errorOf(msg: String): Result = InternalServerError(Json.obj("error" → msg))
 
 }

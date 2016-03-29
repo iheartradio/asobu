@@ -1,0 +1,111 @@
+package asobu.distributed.service
+
+import akka.actor.{Props, Actor}
+import akka.actor.Actor.Receive
+import akka.util.Timeout
+import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.service.Action.DistributedRequest
+import asobu.distributed.service.ExtractorsSpec._
+import asobu.distributed.{PredefinedDefs, EndpointDefinition}
+import asobu.distributed.util.{MockRoute, ScopeWithActor, SpecWithActorCluster, SerializableTest}
+import asobu.dsl.ExtractResult
+import asobu.dsl.extractors.JsonBodyExtractor
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.mutable.Specification
+import org.specs2.specification.mutable.ExecutionEnvironment
+import play.api.libs.json.{JsString, JsNumber, Json}
+import play.api.mvc.Results.Ok
+import play.core.routing.RouteParams
+import play.routes.compiler.{HandlerCall, PathPattern, HttpVerb, Route}
+import shapeless._
+import shapeless.record.Record
+import concurrent.duration._
+import scala.concurrent.Future
+import play.api.test.FakeRequest
+import cats.std.future._
+
+class SyntaxSpec extends SpecWithActorCluster with SerializableTest with ExecutionEnvironment {
+  import asobu.distributed.service.SyntaxSpec._
+  implicit val format = Json.format[Input]
+  import asobu.dsl.DefaultExtractorImplicits._
+
+  implicit val erc: EndpointsRegistryClient = new EndpointsRegistryClient {
+    def add(endpointDefinition: EndpointDefinition): Future[Unit] = Future.successful(())
+
+    def prefix: Prefix = Prefix("/")
+
+    def buildNumber: Option[BuildNumber] = None
+  }
+
+  implicit val ao: Timeout = 1.seconds
+  val testBE = system.actorOf(testBackend)
+
+  def is(implicit ee: ExecutionEnv) = {
+    "can build endpoint extracting params only" >> new SyntaxScope {
+      val (_, endpointF) = handle(
+        "anEndpoint",
+        process[Input]()
+      )(using(testBE).expect[Output] >> respond(Ok))
+
+      endpointF.map(isSerializable) must beTrue.await
+    }
+
+    "can build endpoint extracting params and body only" >> new SyntaxScope {
+      val (_, endpointF) = handle(
+        "anEndpoint",
+        process[Input](fromJsonBody[Input])
+      )(using(testBE).expect[Output] >> respond(Ok))
+
+      endpointF.map(isSerializable) must beTrue.await
+    }
+
+    "can build endpoint extracting param body, and header" >> new SyntaxScope {
+      val (action, endpointF) = handle(
+        "anEndpoint",
+        process[LargeInput](
+          from(flagInHeader = header[Boolean]("someheaderField")),
+          fromJsonBody[Input]
+        )
+      )(using(testBE).expect[Output] >> respond(Ok))
+
+      endpointF.map(isSerializable) must beTrue.await
+
+      val params = RouteParams(Map.empty, Map.empty)
+      val req = FakeRequest().withHeaders("someheaderField" → "true").withJsonBody(Json.obj("a" → JsString("avalue"), "b" → JsNumber(10)))
+
+      val expectedExtracted = Record(flagInHeader = true).asInstanceOf[action.ExtractedRemotely] //todo find a way to refine action.ExtractedRemotely
+      val remoteResult = endpointF.flatMap(_.remoteExtractor.run((params, req)).toEither)
+
+      remoteResult must beRight(expectedExtracted: Any).await
+
+      val distributedRequest = DistributedRequest(expectedExtracted, req.body)
+
+      val localResult = action.extractors.localExtract(distributedRequest).toEither
+
+      localResult must beRight(LargeInput(a = "avalue", b = 10, flagInHeader = true)).await
+
+    }
+  }
+
+}
+
+trait SyntaxScope extends ScopeWithActor with Controller with Syntax with PredefinedDefs {
+  import play.api.http.HttpVerbs._
+
+  override private[service] def findRoute(action: Action): Route =
+    MockRoute(handlerClass = action.getClass.getName, pathParts = Nil)
+
+}
+
+object SyntaxSpec {
+  class TestBackend extends Actor {
+    def receive: Receive = {
+      case Input(a, b) ⇒ sender ! Output(a + b)
+    }
+  }
+
+  def testBackend: Props = Props(new TestBackend)
+  case class LargeInput(a: String, b: Int, flagInHeader: Boolean)
+  case class Input(a: String, b: Int)
+  case class Output(a: String)
+}
