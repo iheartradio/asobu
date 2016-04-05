@@ -27,7 +27,6 @@ class EndpointsRouterUpdater(
   def receive = monitoring(Nil)
 
   def monitoring(endpoints: List[Endpoint]): Receive = {
-
     def updateEndpoints(data: LWWMap[EndpointDefinition]): Unit = {
       val newDefs: List[EndpointDefinition] = data.entries.values.toList
 

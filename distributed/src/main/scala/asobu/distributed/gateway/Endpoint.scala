@@ -25,7 +25,17 @@ trait EndpointHandler {
   def handle(routeParams: RouteParams, request: Request[AnyContent]): Future[Result]
 }
 
-case class Endpoint(definition: EndpointDefinition, bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default)(implicit arf: ActorRefFactory) extends EndpointRoute with EndpointHandler {
+/**
+ *
+ * @param definition of the endpoint provided by the service side
+ * @param bridgeProps a factory that creates the prop for an bridge actor between
+ *                    gateway router and actual handling service actor
+ * @param arf
+ */
+case class Endpoint(
+    definition: EndpointDefinition,
+    bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
+)(implicit arf: ActorRefFactory) extends EndpointRoute with EndpointHandler {
 
   type T = definition.T
 
@@ -34,14 +44,17 @@ case class Endpoint(definition: EndpointDefinition, bridgeProps: HandlerBridgePr
 
   private val handlerRef: ActorRef = {
     val props = bridgeProps(handlerPath, definition.clusterRole)
-    arf.actorOf(props, handlerActor.name.replace("$", "") + "-Router+" + ThreadLocalRandom.current().nextInt(1000)) //allows some redundancy in this router
+    //a random name allows some redundancy in this router.
+    val bridgeActorName = definition.clusterRole + handlerActor.name.replace("$", "") + ThreadLocalRandom.current().nextInt(1000)
+    arf.actorOf(props, bridgeActorName)
   }
 
   def shutdown(): Unit = if (handlerRef != handlerActor) handlerRef ! PoisonPill
 
   def unapply(request: Request[AnyContent]): Option[RouteParams] = routeExtractors.unapply(request)
 
-  //todo: think of a way to get rid of the ask below, e.g. create an new one-time actor for handling (just like ask)
+  //todo: think of a way to get rid of the ask below, e.g. create an new one-time actor for handling (just like ask),
+  // or have distributed request have the reply to Address and then send it to handlerRef as the implicit sender.
   def handle(routeParams: RouteParams, request: Request[AnyContent]): Future[Result] = {
     import akka.pattern.ask
     import ExecutionContext.Implicits.global

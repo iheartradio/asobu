@@ -46,17 +46,6 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
           def apply = appR.ap(ff())(fa())
         }
 
-      def product[A, B](
-        fa: RequestExtractorDefinition[A],
-        fb: RequestExtractorDefinition[B]
-      ) = new RequestExtractorDefinition[(A, B)] {
-        def apply(): RequestExtractor[(A, B)] = appR.product(fa(), fb())
-      }
-
-      def map[A, B](fa: RequestExtractorDefinition[A])(f: (A) ⇒ B) = new RequestExtractorDefinition[B] {
-        def apply(): RequestExtractor[B] = fa().map(f)
-      }
-
       def pure[A](x: A) = new RequestExtractorDefinition[A] {
         def apply(): RequestExtractor[A] = appR.pure(x)
       }

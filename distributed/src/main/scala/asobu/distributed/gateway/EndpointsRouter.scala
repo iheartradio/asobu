@@ -5,6 +5,10 @@ import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.EndpointsRouter.Update
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results.NotFound
+
+/**
+ * Route http requests to endpoints' handler method
+ */
 class EndpointsRouter extends Actor {
 
   def receive: Receive = handling(Nil)
@@ -25,7 +29,8 @@ class EndpointsRouter extends Actor {
       case Update(eps) ⇒
         context become handling(eps)
     }: Receive) orElse endpointsHandlerPartial orElse {
-      case req: RequestHeader ⇒ sender ! NotFound(s"Action or remote endpoints not found for ${req.path}")
+      case req: RequestHeader ⇒
+        sender ! NotFound(s"Action or remote endpoints not found for ${req.path}")
     }
   }
 

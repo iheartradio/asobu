@@ -1,0 +1,1 @@
+GET   /cats/:catId       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.cats(catId: String)
