@@ -14,7 +14,7 @@ object Dependencies {
     "com.typesafe.play" %% "play-cache" % Versions.play % "provided"
   )
 
-  val shapeless = Seq("com.chuusai" %% "shapeless" % "2.2.5")
+  val shapeless = Seq("com.chuusai" %% "shapeless" % "2.3.0")
   val cat = Seq("org.spire-math" %% "cats" % "0.3.0")
 
   val yaml = Seq(

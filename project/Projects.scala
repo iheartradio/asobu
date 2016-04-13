@@ -18,7 +18,7 @@ object Projects extends Build {
     )
 
   lazy val playDSLAkka = Project("play-dsl-akka", file("play-dsl-akka"))
-    .dependsOn(playDSL % "compile->compile;test->test")
+    .dependsOn(playDSL)
     .settings(
       commonSettings ++
       Dependencies.settings ++
