@@ -30,7 +30,7 @@ trait Syntax extends ExtractorFunctions {
    */
   def handle[T](
     name: String,
-    extrs: Extractors[T]
+    extrs: ActionExtractor[T]
   )(bk: (Headers, T) ⇒ Future[DistributedResult])(
     implicit
     rc: EndpointsRegistryClient,
@@ -51,7 +51,7 @@ trait Syntax extends ExtractorFunctions {
 
   val noExtraFields = RequestExtractorDefinition.empty
 
-  def process[T] = Extractors.build[T]
+  def process[T] = ActionExtractor.build[T]
 
   //the incoming type could be specific but it couldn't be inferred, so it's leaved as Any to avoid the need of respecifying the data type here
   def using(actor: ActorRef)(implicit at: Timeout, ec: ExecutionContext): Extractor[Any, Any] =

@@ -16,7 +16,7 @@ import scala.util.parsing.input.Positional
 trait Action {
   type TMessage
 
-  val extractors: Extractors[TMessage]
+  val extractors: ActionExtractor[TMessage]
 
   type ExtractedRemotely = extractors.LToSend
 

@@ -1,6 +1,6 @@
 package asobu.distributed.service
 
-import asobu.distributed.service.Extractors.RouteParamsExtractor
+import asobu.distributed.service.ActionExtractor.RouteParamsExtractor
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import play.core.routing.RouteParams
