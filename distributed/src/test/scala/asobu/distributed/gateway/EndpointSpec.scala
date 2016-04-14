@@ -13,6 +13,8 @@ import play.core.routing.RouteParams
 import play.routes.compiler._
 import shapeless.HNil
 
+import scala.util.Random
+
 object EndpointSpec extends PlaySpecification with Mockito {
   sequential
 
@@ -59,7 +61,7 @@ object EndpointSpec extends PlaySpecification with Mockito {
   "unapply" >> {
 
     def extractParams(epd: EndpointDefinition, request: RequestHeader): Option[RouteParams] = {
-      val system = TestClusterActorSystem.create
+      val system = TestClusterActorSystem.create(Random.nextInt(21444) + 2560)
       val endpoint = Endpoint(epd)(system)
       val result = request match {
         case endpoint(params) ⇒ Some(params)

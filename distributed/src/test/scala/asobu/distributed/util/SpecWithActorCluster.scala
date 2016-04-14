@@ -6,27 +6,45 @@ import com.typesafe.config.ConfigFactory
 import org.specs2.mutable.Specification
 import org.specs2.specification.{Scope, AfterAll}
 
-trait SpecWithActorCluster extends Specification with AfterAll {
+import scala.util.Random
 
+trait SpecWithActorCluster extends Specification with AfterAll {
   sequential
-  implicit lazy val system = TestClusterActorSystem.create
-  val role = TestClusterActorSystem.role
-  def afterAll(): Unit = system.terminate()
+  lazy val port = Random.nextInt(21444) + 2560
+  var systems = List()
+  implicit lazy val system = {
+    TestClusterActorSystem.create(port)
+  }
+  lazy val role = TestClusterActorSystem.role
+
+  override def afterAll(): Unit = {
+    system.terminate()
+  }
 }
 
 object TestClusterActorSystem {
+
   val role = "test"
-  def create = ActorSystem("test", ConfigFactory.parseString(
-    s"""
-      | akka {
-      |   actor.provider = akka.cluster.ClusterActorRefProvider
-      |   loglevel = "ERROR"
-      |   cluster.roles = [ $role ]
-      |   remote.netty.tcp.port = 0
-      | }
-      |
+  def create(port: Int = 2551) = {
+    ActorSystem("test", ConfigFactory.parseString(
+      s"""
+         | akka {
+         |   actor.provider = akka.cluster.ClusterActorRefProvider
+         |   loglevel = "ERROR"
+         |   cluster {
+         |     seed-nodes = ["akka.tcp://application@127.0.0.1:$port"]
+         |     roles = [ $role ]
+         |   }
+         |   remote.netty.tcp {
+         |     hostname = 127.0.0.1
+         |     port = $port
+         |   }
+         |   extensions = [ "akka.cluster.metrics.ClusterMetricsExtension", "akka.cluster.ddata.DistributedData"]
+         | }
+         |
       | """.stripMargin
-  ))
+    ))
+  }
 }
 
 class ScopeWithActor(implicit system: ActorSystem) extends TestKit(system) with ImplicitSender with Scope

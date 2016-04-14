@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait Syntax extends ExtractorFunctions {
   parent: Controller ⇒
-  def actionName(name: String) = getClass.getName.stripSuffix("$").replace('$', '.') + "." + name
 
   /**
    *

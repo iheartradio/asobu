@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import akka.util.Timeout
 import asobu.distributed.{EndpointsRegistry, DefaultEndpointsRegistry}
 import asobu.distributed.service.{ApiDocumentationReporter, EndpointsRegistryClientImp, EndpointsRegistryClient}
-import backend.endpoints.TestMeEndpoint
+import backend.endpoints.AMixedController
 import backend.school.StudentService
 import com.iheart.playSwagger.SwaggerSpecGenerator
 import com.typesafe.config.ConfigFactory
@@ -55,7 +55,7 @@ object Backend extends App {
 
     val initControllers = Try {
       List(
-        TestMeEndpoint(factorialBE, studentService)
+        AMixedController(factorialBE, studentService)
       )
     }
 

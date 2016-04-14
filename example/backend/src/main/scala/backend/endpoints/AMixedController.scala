@@ -15,7 +15,8 @@ import play.api.mvc.Results._
 import concurrent.duration._
 import api.authentication.Authenticated
 
-case class TestMeEndpoint(factorialBackend: ActorRef, studentBackend: ActorRef)(implicit sys: ActorSystem, epc: EndpointsRegistryClient) extends DistributedController {
+//todo: this example includes endpoints irrelevant to each other. Improve by breaking it up.
+case class AMixedController(factorialBackend: ActorRef, studentBackend: ActorRef)(implicit sys: ActorSystem, epc: EndpointsRegistryClient) extends DistributedController {
   import Formats._
 
   import concurrent.ExecutionContext.Implicits.global

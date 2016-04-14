@@ -14,7 +14,7 @@ import play.routes.compiler._
 import shapeless.HNil
 import concurrent.duration._
 
-object EndpointsRouterSpec extends SpecWithActorCluster {
+class EndpointsRouterSpec extends SpecWithActorCluster {
 
   import play.api.http.HttpVerbs._
 
