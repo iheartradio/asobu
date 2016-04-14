@@ -13,7 +13,7 @@ import play.core.routing.RouteParams
 import shapeless._, record.Record
 import asobu.dsl.CatsInstances._
 
-object ExtractorsSpec extends Specification with SerializableTest {
+object ActionExtractorSpec extends Specification with SerializableTest {
   import RequestExtractorDefinition._
   import asobu.dsl.DefaultExtractorImplicits._
 
@@ -25,7 +25,7 @@ object ExtractorsSpec extends Specification with SerializableTest {
 
     val reqExtractor = compose(foo = header[String]("foo_h"), bar2 = header[Boolean]("bar2"))
     val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val extractors = Extractors.build[MyMessage](reqExtractor, bodyExtractor)
+    val extractors = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
 
     val params = RouteParams(Map.empty, Map.empty)
     val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV", "bar2" → "true")
@@ -39,7 +39,7 @@ object ExtractorsSpec extends Specification with SerializableTest {
   "can build extractor correctly with routesParams to extract" >> { implicit ev: ExecutionEnv ⇒
     val reqExtractor = compose(foo = header[String]("foo_h"))
     val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val extractors = Extractors.build[MyMessage](reqExtractor, bodyExtractor)
+    val extractors = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
 
     val params = RouteParams(Map.empty, Map("bar2" → Seq("true")))
     val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV")
@@ -53,7 +53,7 @@ object ExtractorsSpec extends Specification with SerializableTest {
   "can build extractor correctly without bodyExtractor" >> { implicit ev: ExecutionEnv ⇒
     val reqExtractor = compose(foo = header[String]("foo_h"))
     val bodyExtractor = BodyExtractor.empty
-    val extractors = Extractors.build[MyMessage](reqExtractor, bodyExtractor)
+    val extractors = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
 
     val params = RouteParams(Map.empty, Map("bar2" → Seq("true"), "bar" → Seq("3")))
     val req: Request[AnyContent] = FakeRequest().withHeaders("foo_h" → "foV")
@@ -65,7 +65,7 @@ object ExtractorsSpec extends Specification with SerializableTest {
   }
 
   "can build extractor correctly without bodyExtractor and extra" >> { implicit ev: ExecutionEnv ⇒
-    val extractors = Extractors.build[MyMessage](RequestExtractorDefinition.empty, BodyExtractor.empty)
+    val extractors = ActionExtractor.build[MyMessage](RequestExtractorDefinition.empty, BodyExtractor.empty)
 
     val params = RouteParams(Map.empty, Map("bar2" → Seq("true"), "bar" → Seq("3"), "foo" → Seq("foV")))
 
@@ -85,7 +85,7 @@ object ExtractorsSpec extends Specification with SerializableTest {
     val bodyExtractor = BodyExtractor.empty
 
     val remoteExtractorDef =
-      Extractors.build[MyMessage](reqExtractor, bodyExtractor).remoteExtractorDef
+      ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor).remoteExtractorDef
 
     isSerializable(remoteExtractorDef) must beTrue
   }

@@ -3,7 +3,7 @@ package asobu.distributed
 import akka.actor.{ActorPath, ActorRef}
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.RoutesCompilerExtra._
-import asobu.distributed.service.Extractors.RemoteExtractor
+import asobu.distributed.service.ActionExtractor.RemoteExtractor
 import asobu.distributed.service.RemoteExtractorDef
 import asobu.dsl.{Extractor, ExtractResult}
 import play.api.mvc.{AnyContent, Request}

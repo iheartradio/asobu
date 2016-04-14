@@ -7,7 +7,7 @@ import akka.routing.RoundRobinGroup
 import akka.util.Timeout
 import asobu.distributed.service.Action.{DistributedResult, DistributedRequest}
 import asobu.distributed.EndpointDefinition
-import asobu.distributed.service.Extractors.RemoteExtractor
+import asobu.distributed.service.ActionExtractor.RemoteExtractor
 import play.api.mvc.Results._
 import play.api.mvc.{Result, AnyContent, Request}
 import play.core.routing

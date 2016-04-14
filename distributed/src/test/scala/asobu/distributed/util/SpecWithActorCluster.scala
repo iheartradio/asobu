@@ -11,7 +11,6 @@ import scala.util.Random
 trait SpecWithActorCluster extends Specification with AfterAll {
   sequential
   lazy val port = Random.nextInt(21444) + 2560
-  var systems = List()
   implicit lazy val system = {
     TestClusterActorSystem.create(port)
   }

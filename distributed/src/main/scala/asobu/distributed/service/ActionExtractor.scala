@@ -1,11 +1,11 @@
 package asobu.distributed.service
 
 import asobu.distributed.service.Action.DistributedRequest
-import asobu.distributed.service.Extractors._
+import asobu.distributed.service.ActionExtractor._
 import asobu.distributed.RequestExtractorDefinition
 import asobu.distributed.gateway.SyncedExtractResult
 import asobu.distributed.service.Action.DistributedRequest
-import asobu.distributed.service.Extractors.{RouteParamsExtractor, BodyExtractor, RemoteExtractor}
+import asobu.distributed.service.ActionExtractor.{RouteParamsExtractor, BodyExtractor, RemoteExtractor}
 import asobu.dsl._
 import asobu.dsl.extractors.JsonBodyExtractor
 import asobu.dsl.util.HListOps.{RestOf, CombineTo, RestOf2}
@@ -27,7 +27,12 @@ import play.api.mvc._, play.api.mvc.Results._
 import scala.annotation.implicitNotFound
 import scala.concurrent.Future
 
-trait Extractors[TMessage] {
+/**
+ * Extractor for action to extract information out of request either at the gateway side (`remoteExtractorDef`)
+ * or at the service side (`localExtract`)
+ * @tparam TMessage
+ */
+trait ActionExtractor[TMessage] {
   /**
    * List to be extracted from request and send to the remote handler
    */
@@ -40,8 +45,8 @@ trait Extractors[TMessage] {
   def localExtract(dr: DistributedRequest[LToSend]): ExtractResult[TMessage]
 }
 
-object Extractors {
-  type Aux[TMessage, LToSend0 <: HList, LParam0 <: HList, LExtra0 <: HList] = Extractors[TMessage] {
+object ActionExtractor {
+  type Aux[TMessage, LToSend0 <: HList, LParam0 <: HList, LExtra0 <: HList] = ActionExtractor[TMessage] {
     type LToSend = LToSend0
     type LParam = LParam0
     type LExtra = LExtra0
@@ -66,7 +71,7 @@ object Extractors {
       r: RestOf2.Aux[TRepr, LRemoteExtra, LBody, LParamExtracted],
       prepend: Prepend.Aux[LParamExtracted, LRemoteExtra, LExtracted],
       combineTo: CombineTo[LExtracted, LBody, TRepr],
-      rpeb: RouteParamsExtractorBuilder[LParamExtracted]): Extractors.Aux[TMessage, LExtracted, LParamExtracted, LRemoteExtra] = new Extractors[TMessage] {
+      rpeb: RouteParamsExtractorBuilder[LParamExtracted]): ActionExtractor.Aux[TMessage, LExtracted, LParamExtracted, LRemoteExtra] = new ActionExtractor[TMessage] {
 
       type LToSend = LExtracted
       type LParam = LParamExtracted
@@ -88,14 +93,14 @@ object Extractors {
       gen: LabelledGeneric.Aux[TMessage, TRepr],
       r: RestOf.Aux[TRepr, LBody, LParamExtracted],
       combineTo: CombineTo[LParamExtracted, LBody, TRepr],
-      rpeb: RouteParamsExtractorBuilder[LParamExtracted]): Extractors.Aux[TMessage, LParamExtracted, LParamExtracted, HNil] = apply(RequestExtractorDefinition.empty, bodyExtractor)
+      rpeb: RouteParamsExtractorBuilder[LParamExtracted]): ActionExtractor.Aux[TMessage, LParamExtracted, LParamExtracted, HNil] = apply(RequestExtractorDefinition.empty, bodyExtractor)
 
     def apply[TRepr <: HList]()(
       implicit
       gen: LabelledGeneric.Aux[TMessage, TRepr],
       combineTo: CombineTo[TRepr, HNil, TRepr],
       rpeb: RouteParamsExtractorBuilder[TRepr]
-    ): Extractors.Aux[TMessage, TRepr, TRepr, HNil] = apply(BodyExtractor.empty)
+    ): ActionExtractor.Aux[TMessage, TRepr, TRepr, HNil] = apply(BodyExtractor.empty)
   }
 
   def build[TMessage] = new builder[TMessage]

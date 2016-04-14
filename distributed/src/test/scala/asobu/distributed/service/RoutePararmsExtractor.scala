@@ -1,6 +1,6 @@
 package asobu.distributed.service
 
-import asobu.distributed.service.Extractors.RouteParamsExtractor
+import asobu.distributed.service.ActionExtractor.RouteParamsExtractor
 import shapeless.HList
 
 /**

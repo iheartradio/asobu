@@ -5,7 +5,7 @@ import akka.actor.Actor.Receive
 import akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.Action.DistributedRequest
-import asobu.distributed.service.ExtractorsSpec._
+import asobu.distributed.service.ActionExtractorSpec._
 import asobu.distributed.{PredefinedDefs, EndpointDefinition}
 import asobu.distributed.util.{MockRoute, ScopeWithActor, SpecWithActorCluster, SerializableTest}
 import asobu.dsl.ExtractResult
