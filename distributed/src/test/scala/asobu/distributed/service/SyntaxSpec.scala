@@ -59,6 +59,15 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
       endpointF.map(isSerializable) must beTrue.await
     }
 
+    "can build endpoint extracting params and body as nested field" >> new SyntaxScope {
+      val (_, endpointF) = handle(
+        "anEndpoint",
+        process[NestedInput](from(child = jsonBody[Input]))
+      )(using(testBE).expect[Output] >> respond(Ok))
+
+      endpointF.map(isSerializable) must beTrue.await
+    }
+
     "can build endpoint extracting param body, and header" >> new SyntaxScope {
       val (action, endpointF) = handle(
         "anEndpoint",
@@ -107,5 +116,6 @@ object SyntaxSpec {
   def testBackend: Props = Props(new TestBackend)
   case class LargeInput(a: String, b: Int, flagInHeader: Boolean)
   case class Input(a: String, b: Int)
+  case class NestedInput(child: Input, c: Boolean)
   case class Output(a: String)
 }
