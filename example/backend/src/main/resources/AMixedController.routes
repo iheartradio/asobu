@@ -2,7 +2,7 @@
 # summary: Get factorial with distributed service
 # description: This entry point is provided from the backend side.
 ###
-GET   /ep1/a/:n   backend.endpoints.TestMeEndpoint.ep1(n: Int)
+GET   /ep1/a/:n   backend.endpoints.AMixedController.ep1(n: Int)
 
 ### NoDocs ###
 GET   /ep2/:a/something   a.b.d(a: Int, b: String)
@@ -19,4 +19,4 @@ GET   /ep2/:a/something   a.b.d(a: Int, b: String)
 #     schema:
 #       $ref: '#/definitions/backend.school.StudentService.Grade'
 ###
-POST   /ep3/something   backend.endpoints.TestMeEndpoint.ep3()
+POST   /ep3/something   backend.endpoints.AMixedController.ep3()

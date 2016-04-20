@@ -21,6 +21,9 @@ class AuthInfoExtractorBuilder[AuthInfoT](buildAuthInfo: RequestHeader ⇒ Futur
     buildAuthInfo.andThen(_.map(_.left.map(Unauthorized(_)))).andThen(fromEither)
   )
 
+  /**
+   * An extractor that extract only a single field value out of the [[ AuthInfoT ]]
+   */
   def field[K <: Symbol, Repr <: HList](key: Witness.Aux[K])(
     implicit
     gen: LabelledGeneric.Aux[AuthInfoT, Repr],

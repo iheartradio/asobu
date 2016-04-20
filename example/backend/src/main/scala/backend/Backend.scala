@@ -3,8 +3,9 @@ package backend
 import akka.actor._
 import akka.cluster.Cluster
 import akka.util.Timeout
+import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.{EndpointsRegistry, DefaultEndpointsRegistry}
-import asobu.distributed.service.{ApiDocumentationReporter, EndpointsRegistryClientImp, EndpointsRegistryClient}
+import asobu.distributed.service.{ApiDocumentationReporter, EndpointsRegistryClientImp, EndpointsRegistryClient, init}
 import backend.endpoints.AMixedController
 import backend.school.StudentService
 import com.iheart.playSwagger.SwaggerSpecGenerator
@@ -46,31 +47,14 @@ object Backend extends App {
 
   lazy val swaggerGenerator = SwaggerSpecGenerator("backend")(getClass.getClassLoader)
 
-
-  Cluster(system).registerOnMemberUp {
-
-    val registry: EndpointsRegistry = DefaultEndpointsRegistry()
-
-    implicit val rec: EndpointsRegistryClient = EndpointsRegistryClientImp(registry, buildNumber = Some(BuildInfo))
-
-    val initControllers = Try {
-      List(
-        AMixedController(factorialBE, studentService)
-      )
-    }
-
-    val apiDocReporter = ApiDocumentationReporter(registry) { (routes: Seq[Route]) =>
-      val doc: JsObject = swaggerGenerator.generateFromRoutes(ListMap(("backend",(rec.prefix.value, routes))))
-      Some(doc)
-    }
-
-    initControllers.foreach(apiDocReporter.report)
-
-    initControllers.recover {
-      case e: Throwable =>
-        system.log.error(e, s"Cannot initialize controllers, Exiting")
-        system.terminate()
-    }
+  implicit val apiDocGenerator = (prefix: Prefix, routes: Seq[Route]) => {
+    val doc: JsObject = swaggerGenerator.generateFromRoutes(ListMap(("backend",(prefix.value, routes))))
+    Some(doc)
   }
 
+  init { implicit rec =>
+    List(
+      AMixedController(factorialBE, studentService)
+    )
+  }
 }

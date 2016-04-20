@@ -3,9 +3,9 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val play = "2.4.6"
+    val play = "2.4+"
     val specs2 = "3.6.6"
-    val akka = "2.4.2"
+    val akka = "2.4+"
   }
 
   val resolverSetting = resolvers ++= Seq(
