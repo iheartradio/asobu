@@ -173,29 +173,3 @@ object RouteParamsExtractorBuilder extends MkRouteParamsExtractorBuilder0 {
   }
 }
 
-trait RouteParamRead[V] extends Serializable {
-  def apply(field: String, params: RouteParams): Xor[String, V]
-}
-
-//This whole thing is needed because PathBindable and QueryStringBindable isn't serializable
-object RouteParamRead {
-
-  def apply[V](implicit rpe: RouteParamRead[V]) = rpe
-
-  def mk[V](f: ⇒ (String, RouteParams) ⇒ Xor[String, V]) = new RouteParamRead[V] {
-    def apply(field: String, params: RouteParams): Xor[String, V] = {
-      f(field, params)
-    }
-  }
-
-  implicit val rpeInt: RouteParamRead[Int] = mk(ext[Int])
-  implicit val rpeLong: RouteParamRead[Long] = mk(ext[Long])
-  implicit val rpeDouble: RouteParamRead[Double] = mk(ext[Double])
-  implicit val rpeFloat: RouteParamRead[Float] = mk(ext[Float])
-  implicit val rpeBoolean: RouteParamRead[Boolean] = mk(ext[Boolean])
-  implicit val rpeString: RouteParamRead[String] = mk(ext[String])
-
-  def ext[V: PathBindable: QueryStringBindable] = (field: String, params: RouteParams) ⇒ {
-    params.fromPath[V](field).value.toXor orElse params.fromQuery[V](field).value.toXor
-  }
-}
