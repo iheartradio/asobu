@@ -250,18 +250,11 @@ class SyntaxSpec extends PlaySpecification {
 
     }
 
-    "with multiple filters" >> { implicit ev: ExecutionEnv ⇒
+    "with filter" >> { implicit ev: ExecutionEnv ⇒
       import Filters._
 
-      implicit val cacheApi = new CacheApi {
-        def set(key: String, value: Any, expiration: Duration): Unit = ???
-        def get[T: ClassTag](key: String): Option[T] = ???
-        def getOrElse[A: ClassTag](key: String, expiration: Duration)(orElse: ⇒ A): A = orElse
-        def remove(key: String): Unit = ???
-      }
-
       val endpoint = handle(
-        (cached(3.hours) and authenticated) {
+        authenticated {
           (process[RequestMsg] using actor) >> {
             expect[ResponseMsg] respondJson (Ok(_)) filter eTag(_.updated)
           }

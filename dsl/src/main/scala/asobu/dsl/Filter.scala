@@ -22,9 +22,6 @@ object Filter {
 
 trait Filters {
 
-  def cached[RMT](duration: Duration)(implicit cache: CacheApi): Filter[RMT] =
-    (req, result) ⇒ cache.getOrElse(req.body.toString)(result)
-
   def eTag[T](getETag: T ⇒ DateTime): Filter[T] = { (req, result) ⇒
     import play.api.http.HeaderNames.ETAG
     import play.api.libs.concurrent.Execution.Implicits._
