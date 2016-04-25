@@ -21,6 +21,7 @@ class ApiDocumentationRegistry(endpointsRegistry: EndpointsRegistry) extends Act
 
     case GetFailure(EndpointsDocsKey, Some(replyTo: ActorRef)) ⇒
       log.error("Failed to retrieve distributed API documentation")
+      replyTo ! Json.obj("error" → "failed to retrieve API documentation")
 
     case NotFound(EndpointsDocsKey, Some(replyTo: ActorRef)) ⇒
       replyTo ! Json.obj()

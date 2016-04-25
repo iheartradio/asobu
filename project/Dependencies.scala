@@ -42,6 +42,10 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test"
   )
 
+  val kanaloa = Seq(
+    "com.iheart" %% "kanaloa" % "0.3.0"
+  )
+
   val test = Seq(
     "com.typesafe.play" %% "play-specs2" % Versions.play % "test, provided",
     "org.specs2" %% "specs2-core" % Versions.specs2 % "test",

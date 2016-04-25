@@ -32,6 +32,7 @@ lazy val example = (project in file("."))
 lazy val frontend = (project in file("frontend"))
   .dependsOn(asobuDSL)
   .dependsOn(asobuDistributed)
+  .dependsOn(asobuDistributedKanaloa)
   .dependsOn(asobuDSLAkka)
   .enablePlugins(PlayScala, BuildInfoPlugin, JavaAppPackaging)
     .settings(
@@ -81,6 +82,7 @@ lazy val api = (project in file("api"))
 
 lazy val asobuDSL = ProjectRef(file("../"), "asobu-dsl")
 lazy val asobuDistributed = ProjectRef(file("../"), "asobu-distributed")
+lazy val asobuDistributedKanaloa = ProjectRef(file("../"), "asobu-distributed-kanaloa")
 lazy val asobuDSLAkka = ProjectRef(file("../"), "asobu-dsl-akka")
 
 //

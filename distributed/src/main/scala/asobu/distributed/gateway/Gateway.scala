@@ -41,18 +41,20 @@ class Gateway @Inject() (implicit system: ActorSystem, handlerBridgeProps: Handl
  * Eagerly start the Gateway
  */
 class GateWayModule extends Module {
-  def bindings(
+  protected def defaultBridgeClass: Class[_ <: HandlerBridgeProps] = classOf[DefaultHandlerBridgeProps]
+
+  final def bindings(
     environment: Environment,
     configuration: Configuration
   ) = {
-    val bridgePropsClassName = configuration.getString("asobu.bridgePropsClass")
-    val defaultBridgeClass = classOf[DefaultHandlerBridgeProps]
-    val bridgeClass: Option[Class[_ <: HandlerBridgeProps]] =
+    val bridgeClass: Class[_ <: HandlerBridgeProps] = {
+      val bridgePropsClassName = configuration.getString("asobu.bridgePropsClass")
       bridgePropsClassName.map(n ⇒ environment.classLoader.loadClass(n).asSubclass(classOf[HandlerBridgeProps]))
+    }.getOrElse(defaultBridgeClass)
 
     Seq(
       bind[Gateway].toSelf.eagerly,
-      bridgeClass.fold(bind[HandlerBridgeProps].to(defaultBridgeClass))(bind[HandlerBridgeProps].to(_))
+      bind[HandlerBridgeProps].to(bridgeClass)
     )
   }
 }
