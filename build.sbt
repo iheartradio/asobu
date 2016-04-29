@@ -1,6 +1,6 @@
 
 lazy val root = Project("root", file("."))
-  .aggregate(dsl, dslAkka, distributed)
+  .aggregate(dsl, dslAkka, distributed, distributedKanaloa)
   .settings(commonSettings:_*)
   .settings(noPublishing: _*)
   .settings(Testing.settings: _*)
@@ -38,6 +38,19 @@ lazy val distributed = Project("asobu-distributed", file("distributed"))
       Testing.settings: _*)
   .settings(
     libraryDependencies ++= Dependencies.akka
+  )
+
+lazy val distributedKanaloa = Project("asobu-distributed-kanaloa", file("distributed-kanaloa"))
+  .dependsOn(distributed)
+  .aggregate(distributed)
+  .settings(
+    commonSettings ++
+      Dependencies.settings ++
+      Publish.settings ++
+      Format.settings ++
+      Testing.settings: _*)
+  .settings(
+    libraryDependencies ++= Dependencies.akka ++ Dependencies.kanaloa
   )
 
 val noPublishing = Seq(publish := (), publishLocal := (), publishArtifact := false)

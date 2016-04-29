@@ -3,9 +3,9 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val play = "2.4.6"
+    val play = "2.4+"
     val specs2 = "3.6.6"
-    val akka = "2.4.2"
+    val akka = "2.4+"
   }
 
   val resolverSetting = resolvers ++= Seq(
@@ -24,8 +24,8 @@ object Dependencies {
   )
 
   val typelevel = Seq(
-    "org.typelevel" %% "cats" % "0.5.0-SNAPSHOT",
-    "com.milessabin" %% "kittens" % "1.0.0-SNAPSHOT"
+    "org.typelevel" %% "cats" % "0.5.0",
+    "org.typelevel" %% "kittens" % "1.0.0-M2"
   )
 
 
@@ -40,6 +40,10 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-cluster-metrics" % Versions.akka % "provided",
     "com.typesafe.akka" %% "akka-distributed-data-experimental" % Versions.akka,
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test"
+  )
+
+  val kanaloa = Seq(
+    "com.iheart" %% "kanaloa" % "0.3.0"
   )
 
   val test = Seq(

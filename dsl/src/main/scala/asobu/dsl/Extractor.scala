@@ -27,7 +27,7 @@ trait ExtractorOps {
   }
 
   implicit class ExtractorOps2[A, B](self: Extractor[A, B]) {
-
+    //todo: add example to the syntax spec
     def ensure(ifLeft: ⇒ Result)(f: B ⇒ Boolean)(implicit ex: ExecutionContext): Extractor[A, B] =
       self.mapF(_.ensure(ifLeft)(f))
 

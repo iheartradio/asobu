@@ -7,22 +7,34 @@ import play.api.mvc.Results._
 import cats.std.all._
 import scala.concurrent.{ExecutionContext, Future}
 
+//todo: need a test in syntax and example of actual usage here
 object Etag {
   import Extractor._
   type Headers = Seq[(String, String)]
+
+  /**
+   *
+   * @param processor
+   * @param toHttpResult
+   * @param getETag
+   * @param ec
+   * @tparam A
+   * @tparam B
+   * @return
+   */
   def apply[A, B](
-    extractor1: Extractor[A, B],
-    extractor2: Extractor[B, Result]
+    processor: Extractor[A, B],
+    toHttpResult: Extractor[B, Result]
   )(getETag: B ⇒ DateTime)(implicit ec: ExecutionContext): Extractor[(Headers, A), Result] = { (p: (Headers, A)) ⇒
     import play.api.http.HeaderNames.ETAG
     val (headers, a) = p
     val etagInHead: Option[Long] = headers.toMap.get(ETAG).map(_.toLong)
-    val resultB: ExtractResult[B] = extractor1.run(a)
+    val resultB: ExtractResult[B] = processor.run(a)
     for {
       b ← resultB
       etagInData = getETag(b).getMillis
       _ ← resultB.ensure(NotModified)(_ ⇒ etagInHead.fold(true)(_ != etagInData))
-      r ← extractor2.run(b)
+      r ← toHttpResult.run(b)
     } yield r.withHeaders(ETAG → etagInData.toString)
   }
 
