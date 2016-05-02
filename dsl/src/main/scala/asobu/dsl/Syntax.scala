@@ -2,7 +2,7 @@ package asobu.dsl
 
 import asobu.dsl.SyntaxFacilitators._
 import asobu.dsl.directives.FallbackDir
-import asobu.dsl.extractors.{JsonBodyExtractor, AuthInfoExtractorBuilder}
+import asobu.dsl.extractors.{HeaderExtractors, JsonBodyExtractor, AuthInfoExtractorBuilder}
 import play.api.libs.json.{JsValue, Json, Reads, Writes}
 import play.api.mvc.{RequestHeader, Result, Results}
 import shapeless.HList
@@ -13,6 +13,7 @@ trait CompositionSyntax
     extends ProcessorOps
     with DirectiveOps
     with ExtractorFunctions
+    with HeaderExtractors
     with CatsInstances
     with cats.syntax.AllSyntax {
 
@@ -38,7 +39,8 @@ trait CompositionSyntax
     def body = JsonBodyExtractor.body[T]
   }
 
-  def from = composeF
+  def fromFunc = composeF
+  def from = compose
 
   def using[RMT](filters: Filter[Any]*)(directive: Directive[RMT]): Directive[RMT] =
     directive.filter(filters.reduce(_ and _))

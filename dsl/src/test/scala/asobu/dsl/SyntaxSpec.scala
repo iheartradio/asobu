@@ -4,6 +4,7 @@ import asobu.dsl
 import asobu.dsl._
 import asobu.dsl.Syntax._
 import asobu.dsl.SyntaxFacilitators._
+import asobu.dsl.extractors.HeaderExtractors
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import play.api.cache.CacheApi
@@ -68,7 +69,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val controller = new Controller {
         val withExtraction = handle(
-          from(name = (_: Request[AnyContent]).headers("my_name")),
+          fromFunc(name = (_: Request[AnyContent]).headers("my_name")),
           process[RequestMsg] using actor
             expectAny {
               case ResponseMsg(id, msg, _) ⇒ Ok(s"${id} ${msg}")
@@ -105,10 +106,11 @@ class SyntaxSpec extends PlaySpecification {
     }
 
     "with extraction combination" >> {
-
+      import asobu.dsl.DefaultExtractorImplicits._
+      import scala.concurrent.ExecutionContext.Implicits.global
       val controller = new Controller {
         val combined = handle(
-          fromJson[PartialRequestMessage].body.allFields and from(name = (_: Request[AnyContent]).headers("my_name")),
+          fromJson[PartialRequestMessage].body.allFields and from(name = HeaderExtractors.header[String]("my_name")),
           process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
         )
       }
