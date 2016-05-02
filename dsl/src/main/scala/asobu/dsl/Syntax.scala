@@ -2,7 +2,7 @@ package asobu.dsl
 
 import asobu.dsl.SyntaxFacilitators._
 import asobu.dsl.directives.FallbackDir
-import asobu.dsl.extractors.{HeaderExtractors, JsonBodyExtractor, AuthInfoExtractorBuilder}
+import asobu.dsl.extractors.{ExtraExtractors, HeaderExtractors, JsonBodyExtractor, AuthInfoExtractorBuilder}
 import play.api.libs.json.{JsValue, Json, Reads, Writes}
 import play.api.mvc.{RequestHeader, Result, Results}
 import shapeless.HList
@@ -14,6 +14,7 @@ trait CompositionSyntax
     with DirectiveOps
     with ExtractorFunctions
     with HeaderExtractors
+    with ExtraExtractors
     with CatsInstances
     with cats.syntax.AllSyntax {
 
