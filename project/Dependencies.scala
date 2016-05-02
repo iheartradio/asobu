@@ -3,9 +3,9 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val play = "2.4+"
+    val play = "2.4.6"
     val specs2 = "3.6.6"
-    val akka = "2.4+"
+    val akka = "2.4.2"
   }
 
   val resolverSetting = resolvers ++= Seq(
@@ -17,9 +17,9 @@ object Dependencies {
 
 
   val play = Seq(
-    "com.typesafe.play" %% "play" % Versions.play % "provided",
-    "com.typesafe.play" %% "play-json" % Versions.play % "provided",
-    "com.typesafe.play" %% "play-cache" % Versions.play % "provided",
+    "com.typesafe.play" %% "play" % Versions.play,
+    "com.typesafe.play" %% "play-json" % Versions.play,
+    "com.typesafe.play" %% "play-cache" % Versions.play,
     "com.typesafe.play" %% "routes-compiler" % Versions.play
   )
 
@@ -34,10 +34,10 @@ object Dependencies {
   )
 
   val akka = Seq(
-    "com.typesafe.akka" %% "akka-actor" % Versions.akka % "provided",
-    "com.typesafe.akka" %% "akka-cluster" % Versions.akka % "provided",
-    "com.typesafe.akka" %% "akka-cluster-tools" % Versions.akka % "provided",
-    "com.typesafe.akka" %% "akka-cluster-metrics" % Versions.akka % "provided",
+    "com.typesafe.akka" %% "akka-actor" % Versions.akka,
+    "com.typesafe.akka" %% "akka-cluster" % Versions.akka,
+    "com.typesafe.akka" %% "akka-cluster-tools" % Versions.akka,
+    "com.typesafe.akka" %% "akka-cluster-metrics" % Versions.akka,
     "com.typesafe.akka" %% "akka-distributed-data-experimental" % Versions.akka,
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test"
   )
@@ -59,7 +59,7 @@ object Dependencies {
 
   val settings = Seq(
     libraryDependencies ++= play ++ test ++ typelevel,
-    scalaVersion in ThisBuild := "2.11.7",
+    scalaVersion in ThisBuild := "2.11.8",
     resolverSetting,
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
   ) ++ simulacrum

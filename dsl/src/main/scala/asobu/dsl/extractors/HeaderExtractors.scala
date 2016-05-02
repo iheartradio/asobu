@@ -10,7 +10,7 @@ import shapeless.Witness
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
-object HeaderExtractors {
+trait HeaderExtractors {
   def header[T: Read](key: String)(implicit fbr: FallbackResult, ex: ExecutionContext): RequestExtractor[T] = Kleisli({ (req: Request[AnyContent]) ⇒
     val parsed: Try[T] = for {
       v ← req.headers.get(key).fold[Try[String]](Failure[String](new NoSuchElementException(s"Cannot find $key in header")))(Success(_))
@@ -21,3 +21,6 @@ object HeaderExtractors {
   })
 
 }
+
+object HeaderExtractors extends HeaderExtractors
+
