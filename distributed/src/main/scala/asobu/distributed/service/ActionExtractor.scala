@@ -25,7 +25,7 @@ import CatsInstances._
 import play.api.mvc._, play.api.mvc.Results._
 
 import scala.annotation.implicitNotFound
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Extractor for action to extract information out of request either at the gateway side (`remoteExtractorDef`)
@@ -114,11 +114,11 @@ case class RemoteExtractorDef[LExtracted <: HList, LParamExtracted <: HList, LRe
 )(implicit val prepend: Prepend.Aux[LParamExtracted, LRemoteExtra, LExtracted]) {
 
   /**
-   * Cannot be lazy val which causes it to be mutable
+   * Cannot be lazy val which makes it to be mutable
    *
    * @return
    */
-  def extractor: RemoteExtractor[LExtracted] = {
+  def extractor(implicit ex: ExecutionContext): RemoteExtractor[LExtracted] = {
     val rpe = routeParamsExtractorBuilder()
     Extractor.zip(rpe.mapF(r ⇒ fromXor(r.v)), requestExtractorDefinition.apply())
   }

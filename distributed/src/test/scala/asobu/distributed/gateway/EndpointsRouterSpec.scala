@@ -17,7 +17,7 @@ import concurrent.duration._
 class EndpointsRouterSpec extends SpecWithActorCluster {
 
   import play.api.http.HttpVerbs._
-
+  import system.dispatcher
   val routeString =
     """
       |# Some Comments

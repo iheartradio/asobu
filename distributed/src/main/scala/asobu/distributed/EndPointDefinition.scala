@@ -11,6 +11,8 @@ import play.core.routing.RouteParams
 import play.routes.compiler.Route
 import shapeless.{HNil, HList}
 
+import scala.concurrent.ExecutionContext
+
 /**
  * Endpoint definition by the remote handler
  */
@@ -43,7 +45,7 @@ trait EndpointDefinition {
     s"$verb $path"
   }
 
-  def remoteExtractor: RemoteExtractor[T]
+  def remoteExtractor(implicit ex: ExecutionContext): RemoteExtractor[T]
 
 }
 
@@ -63,7 +65,7 @@ case class EndpointDefImpl[LExtracted <: HList, LParam <: HList, LExtra <: HList
 
   type T = LExtracted
 
-  def remoteExtractor: RemoteExtractor[T] = remoteExtractorDef.extractor
+  def remoteExtractor(implicit ex: ExecutionContext): RemoteExtractor[T] = remoteExtractorDef.extractor
 }
 
 /**
@@ -83,5 +85,5 @@ case class NullaryEndpointDefinition(
     ExtractResult.pure(HNil)
   }
 
-  def remoteExtractor = Extractor.empty[(RouteParams, Request[AnyContent])]
+  def remoteExtractor(implicit ec: ExecutionContext) = Extractor.empty[(RouteParams, Request[AnyContent])]
 }

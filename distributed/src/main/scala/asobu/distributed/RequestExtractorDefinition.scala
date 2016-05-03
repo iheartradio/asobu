@@ -10,6 +10,7 @@ import cats.sequence.RecordSequencer
 import play.api.mvc.Result
 import shapeless.ops.hlist._
 import shapeless._
+import cats.std.future._
 
 import scala.concurrent.Future
 

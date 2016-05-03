@@ -40,8 +40,6 @@ object ExtractorOps extends ExtractorOps
 trait ExtractorFunctions extends ExtractorOps {
   implicit def fromFunction[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = Kleisli(f)
 
-  implicit def fromFunctionXorT[TFrom, T](f: TFrom ⇒ XorTF[T]): Extractor[TFrom, T] = f.andThen(ExtractResult(_))
-
   def empty[TFrom]: Extractor[TFrom, HNil] = apply(_ ⇒ HNil)
 
   def apply[TFrom, T](f: TFrom ⇒ T): Extractor[TFrom, T] = f map pure

@@ -14,7 +14,6 @@ import shapeless.LabelledGeneric
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect._
 import akka.pattern.ask
-import Syntax._
 import asobu.dsl.CatsInstances._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -87,10 +86,7 @@ trait Syntax extends ExtractorFunctions {
 
   implicit def toBackendWHeaders[T](extractor: Extractor[(Headers, T), Result]): (Headers, T) ⇒ Future[DistributedResult] =
     (headers: Headers, t: T) ⇒ extractor.
-      run((headers, t)).v.fold(identity, identity).flatMap(DistributedResult.from(_))
+      run((headers, t)).fold(identity, identity).flatMap(DistributedResult.from(_))
 
 }
 
-object Syntax {
-
-}

@@ -4,6 +4,7 @@ import cats.data.{Kleisli, XorT}
 import play.api.mvc.{AnyContent, Request, Result}
 import play.core.routing.RouteParams
 
+import scala.annotation.implicitNotFound
 import scala.concurrent.Future
 
 package object dsl {
@@ -20,5 +21,9 @@ package object dsl {
 
   type RequestExtractor[T] = Extractor[Request[AnyContent], T]
 
+  type ExtractResult[T] = XorT[Future, Result, T]
+
+  @implicitNotFound("need an implicit way of handling Throwable as Result. You can import asobu.dsl.DefaultExtractorImplicits._ for a default simple implementation")
+  type FallbackResult = Throwable ⇒ Result
 }
 
