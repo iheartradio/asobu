@@ -9,7 +9,8 @@
 Asobu is a library that provides ability to create distributed Http endpoints between Play applications and Akka applications deployed in an Akka cluster.
 
 ## Caveat
-Asobu requires use site having [SI-2712](https://issues.scala-lang.org/browse/SI-2712) fixed. The easiest way to achieve that would be using Miles Sabing's [SI-2712 fix plugin](https://github.com/milessabin/si2712fix-plugin). In short, you can add the following to your build.sbt file
+Asobu requires use site having [SI-2712](https://issues.scala-lang.org/browse/SI-2712) fixed. The easiest way to achieve that would be using Miles Sabing's [SI-2712 fix plugin](https://github.com/milessabin/si2712fix-plugin). In short, you can add the following to your build.sbt file. 
+Also we are pre-release so the API is by no means stable yet, but we'd love to see feedbacks, contributions etc. 
 
 ```Scala
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.1.0" cross CrossVersion.full)
@@ -34,7 +35,6 @@ libraryDependencies ++= {
   Seq(
     "com.iheart" %% "asobu-dsl" % version,
     "com.iheart" %% "asobu-distributed" % version,
-    "com.iheart" %% "asobu-distributed-kanaloa" % version,
     "com.iheart" %% "asobu-dsl-akka" % version
   )
 }
@@ -144,3 +144,57 @@ Then you should be all set.
 
 An example project can be find in the [example](/example) folder.
 
+## Swagger integration
+
+Asobu supports API documentation generation integration, so that API documentation can be generated at individual microservices (i.e. akka app) and submitted to the play app to be congregated as a whole. You can find an example of such integration with 
+[play-swagger](https://github.com/iheartradio/play-swagger) in the example. The basic idea is that you provide an apiDocGenerator at the Akka microservice side before initing the controllers , e.g.
+
+```scala
+
+  lazy val swaggerGenerator = SwaggerSpecGenerator("backend")(getClass.getClassLoader)
+
+  implicit val apiDocGenerator = (prefix: Prefix, routes: Seq[Route]) => {
+    val doc: JsObject = swaggerGenerator.generateFromRoutes(ListMap(("backend",(prefix.value, routes))))
+    Some(doc)
+  }
+  ``` 
+  And then at the play api side you can get the congregated API documentation from asobu `Gateway`
+  ```Scala 
+  class ApiDocuments @Inject() (gateway: Gateway) extends Controller {
+  
+  implicit val to: Timeout = 60.seconds
+
+  def specs = Action.async { _ =>
+    (gateway.apiDocsRegistry ? Retrieve).mapTo[JsObject].map(Ok(_))
+  }
+}
+```
+Example can be found in the [example](/example) project. 
+
+
+## Kanaloa integration
+
+Asobu aslo support integration with kanaloa sitting between play app and the microservice akka app. 
+You need to add the asobu-distributed-kanaloa dependency
+```  
+  libraryDependencies ++= "com.iheart" %% "asobu-distributed-kanaloa" % version
+```
+and then in play application add the following class
+```scala
+package util
+class KanaloaBridge @Inject() (implicit config: Configuration, system: ActorSystem) extends AbstractKanaloaBridge {
+
+  override protected def resultChecker: ResultChecker = {
+    case e: ErrorResult[_] ⇒ Left(e.toString)
+    case m                ⇒ Right(m)
+  }
+}
+
+```
+where `ErrorResult` is your error class. 
+
+Then in the config file, add, 
+```
+asobu.bridgePropsClass = "util.KanaloaBridge"
+
+```
