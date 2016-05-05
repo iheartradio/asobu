@@ -35,7 +35,7 @@ trait EndpointHandler {
 case class Endpoint(
     definition: EndpointDefinition,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-)(implicit arf: ActorRefFactory) extends EndpointRoute with EndpointHandler {
+)(implicit arf: ActorRefFactory, ec: ExecutionContext) extends EndpointRoute with EndpointHandler {
 
   type T = definition.T
 

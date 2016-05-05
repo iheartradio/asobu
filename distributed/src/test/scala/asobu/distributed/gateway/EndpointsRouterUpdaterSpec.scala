@@ -10,9 +10,10 @@ import org.specs2.specification.AfterAll
 import akka.actor.ActorDSL._
 
 class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
-
+  import scala.concurrent.ExecutionContext.Implicits.global
   "sortOutEndpoints" >> {
     import EndpointsRouterUpdater.sortOutEndpoints
+
     def mockEndpoingDef(
       version: Option[Int],
       verb: String = "GET",

@@ -33,6 +33,7 @@ class EndpointsRouterUpdater(
       val SortResult(toAdd, toPurge, toKeep) = sortOutEndpoints(endpoints, newDefs)
 
       if (!toPurge.isEmpty || !toAdd.isEmpty) {
+        import context.dispatcher
         val updatedEndpoints = toKeep ++ toAdd.map(Endpoint(_, bridgeProps))
 
         endpointsRouter ! EndpointsRouter.Update(updatedEndpoints)

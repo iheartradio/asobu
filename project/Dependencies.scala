@@ -25,7 +25,7 @@ object Dependencies {
 
   val typelevel = Seq(
     "org.typelevel" %% "cats" % "0.5.0",
-    "org.typelevel" %% "kittens" % "1.0.0-M2"
+    "org.typelevel" %% "kittens" % "1.0.0-M3"
   )
 
 
@@ -57,11 +57,15 @@ object Dependencies {
     libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.7.0"
   )
 
+  val compilerPlugins = Seq (
+    compilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.1.0" cross CrossVersion.full),
+    compilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+  )
+
   val settings = Seq(
-    libraryDependencies ++= play ++ test ++ typelevel,
+    libraryDependencies ++= play ++ test ++ typelevel ++ compilerPlugins,
     scalaVersion in ThisBuild := "2.11.8",
-    resolverSetting,
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+    resolverSetting
   ) ++ simulacrum
 
 }

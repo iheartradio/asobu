@@ -1,7 +1,7 @@
 package asobu.dsl.extractors
 
 import asobu.dsl.util.Read
-import asobu.dsl.{RequestExtractor, ExtractResult}
+import asobu.dsl.{FallbackResult, RequestExtractor, ExtractResult}
 import cats.data.Kleisli
 import play.api.mvc.{Request, AnyContent}
 
