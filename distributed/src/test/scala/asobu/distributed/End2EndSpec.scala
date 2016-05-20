@@ -2,8 +2,9 @@ package asobu.distributed
 
 import akka.actor.{ActorSystem, ActorRef}
 import akka.util.Timeout
+import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.{GatewayRouter, DefaultHandlerBridgeProps, Gateway}
-import asobu.distributed.service.{DistributedController, EndpointsRegistryClientImp, EndpointsRegistryClient}
+import asobu.distributed.service._
 import asobu.distributed.util.SpecWithActorCluster
 import junit.framework.TestResult
 import play.api.libs.json.{JsNumber, JsString, Json}
@@ -17,11 +18,11 @@ class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
   import End2EndSpec._
   val gatewayAction = DistributedSystem.GatewayApp().action
   Thread.sleep(1000)
-  (new DistributedSystem.ServiceBackend.App).initControllers
+  (new DistributedSystem.ServiceBackend.App)
   Thread.sleep(1000)
 
-  "GET /cats/:catId returns OK Json response" >> {
-    val req = FakeRequest(GET, "/cats/3")
+  "GET /api/cats/:catId returns OK Json response" >> {
+    val req = FakeRequest(GET, "/api/cats/3")
     val resp = gatewayAction(req)
     status(resp) === OK
     (contentAsJson(resp) \ "id").get === JsString("3")
@@ -29,8 +30,8 @@ class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
 
   }
 
-  "GET /dogs/:catId returns 404" >> {
-    val req = FakeRequest(GET, "/dogs/3")
+  "GET /api/dogs/:catId returns 404" >> {
+    val req = FakeRequest(GET, "/api/dogs/3")
     val resp = gatewayAction(req)
     status(resp) === NOT_FOUND
   }
@@ -80,10 +81,8 @@ object End2EndSpec {
       }
 
       case class App(implicit system: ActorSystem) {
-        val registry: EndpointsRegistry = DefaultEndpointsRegistry()
-
-        implicit val rec: EndpointsRegistryClient = EndpointsRegistryClientImp(registry)
-        val initControllers = Try {
+        implicit val prefix = Prefix("/api")
+        init { implicit rc ⇒
           List(
             TestController(testServiceBackendRef)
           )

@@ -159,7 +159,7 @@ trait MkRouteParamsExtractorBuilder0 {
     sequence: RecordSequencer[KleisliRepr]
   ): RouteParamsExtractorBuilder[Repr] = new RouteParamsExtractorBuilder[Repr] {
     def apply(): RouteParamsExtractor[Repr] =
-      sequence(ks().map(kvToKlesili)).asInstanceOf[Kleisli[SyncedExtractResult, RouteParams, Repr]] //this cast is needed because a RecordSequencer.Aux can't find the Repr if Repr is not explicitly defined. The cast is safe because the mapper guarantee the result type. todo: find a way to get rid of the cast
+      sequence(ks().map(kvToKlesili)).asInstanceOf[RouteParamsExtractor[Repr]] //this cast is needed because a RecordSequencer.Aux can't find the Repr if Repr is not explicitly defined. The cast is safe because the mapper guarantee the result type. todo: find a way to get rid of the cast
   }
 
 }

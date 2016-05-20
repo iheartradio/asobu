@@ -17,26 +17,23 @@ package object service {
     buildNumber: Option[BuildNumber] = None,
     apiDocGenerator: (Prefix, Seq[Route]) ⇒ Option[JsObject] = (_, _) ⇒ None): Unit = {
 
-    Cluster(system).registerOnMemberUp {
+    val registry: EndpointsRegistry = DefaultEndpointsRegistry()
 
-      val registry: EndpointsRegistry = DefaultEndpointsRegistry()
+    implicit val rec: EndpointsRegistryClient = EndpointsRegistryClientImp(
+      registry,
+      prefix      = prefix,
+      buildNumber = buildNumber
+    )
 
-      implicit val rec: EndpointsRegistryClient = EndpointsRegistryClientImp(
-        registry,
-        prefix      = prefix,
-        buildNumber = buildNumber
-      )
+    val initControllers = Try(controllers(rec))
+    val apiDocReporter = ApiDocumentationReporter(registry)(routes ⇒ apiDocGenerator(prefix, routes))
 
-      val initControllers = Try(controllers(rec))
-      val apiDocReporter = ApiDocumentationReporter(registry)(routes ⇒ apiDocGenerator(rec.prefix, routes))
+    initControllers.foreach(apiDocReporter.report)
 
-      initControllers.foreach(apiDocReporter.report)
-
-      initControllers.recover {
-        case e: Throwable ⇒
-          system.log.error(e, s"Cannot initialize controllers, Exiting")
-          system.terminate()
-      }
+    initControllers.recover {
+      case e: Throwable ⇒
+        system.log.error(e, s"Cannot initialize controllers, Exiting")
+        system.terminate()
     }
 
   }

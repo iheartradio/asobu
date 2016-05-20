@@ -15,7 +15,7 @@ object Dependencies {
   )
 
   val playSwagger = Seq(
-    "com.iheart" %% "play-swagger" % "0.2.3",
+    "com.iheart" %% "play-swagger" % "0.3.1",
     "org.webjars" % "swagger-ui" % "2.1.4"
   )
 

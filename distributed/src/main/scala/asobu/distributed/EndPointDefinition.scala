@@ -32,8 +32,7 @@ trait EndpointDefinition {
   }
 
   val documentation: (String, String, String) = {
-    val localPath = if (routeInfo.path.parts.isEmpty) ""
-    else defaultPrefix + routeInfo.path.toString
+    val localPath = if (routeInfo.path.parts.isEmpty) "" else defaultPrefix + routeInfo.path.toString
     val pathInfo = prefix.value + localPath
     (routeInfo.verb.toString, pathInfo, routeInfo.call.toString)
   }

@@ -33,6 +33,7 @@ object TestClusterActorSystem {
          |   cluster {
          |     seed-nodes = ["akka.tcp://application@127.0.0.1:$port"]
          |     roles = [ $role ]
+         |     min-nr-of-members = 1
          |   }
          |   remote.netty.tcp {
          |     hostname = 127.0.0.1
