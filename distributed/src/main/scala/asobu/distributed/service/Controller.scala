@@ -26,26 +26,6 @@ trait Controller {
     case Left(err) ⇒ throw RoutesParsingException(err.map(_.toString).mkString(". "))
   }
 
-  private[service] def findRoute(action: Action): Route = routes.find { r ⇒
-    val HandlerCall(packageName, controllerName, _, method, _) = r.call
-    action.name == packageName + "." + controllerName + "." + method
-  }.getOrElse {
-    throw new Exception(s"Cannot find route for action ${action.name}")
-  }
-
-  def addAction(action: Action)(
-    implicit
-    registryClient: EndpointsRegistryClient,
-    ec: ExecutionContext,
-    sys: ActorSystem
-  ): Future[EndpointDefinition] = {
-    val version = registryClient.buildNumber.map(_.buildInfoBuildNumber)
-
-    val epd: EndpointDefinition =
-      action.endpointDefinition(findRoute(action), registryClient.prefix, version)
-
-    registryClient.add(epd).map(_ ⇒ epd)
-  }
-
+  def actions: List[Action]
 }
 

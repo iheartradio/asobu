@@ -2,6 +2,7 @@ package asobu.distributed.service
 
 import akka.actor.{ActorSystem, ActorRef}
 import akka.util.Timeout
+import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.Action.{DistributedRequest, DistributedResult}
 import asobu.distributed.{Headers, RequestExtractorDefinition, EndpointDefinition}
 import asobu.dsl.{ExtractorFunctions, ExtractResult, Extractor}
@@ -30,20 +31,14 @@ trait Syntax extends ExtractorFunctions {
   def handle[T](
     name: String,
     extrs: ActionExtractor[T]
-  )(bk: (Headers, T) ⇒ Future[DistributedResult])(
-    implicit
-    rc: EndpointsRegistryClient,
-    ec: ExecutionContext,
-    sys: ActorSystem
-  ): (Action.Aux[T], Future[EndpointDefinition]) = {
+  )(bk: (Headers, T) ⇒ Future[DistributedResult]): Action.Aux[T] = {
     val name0 = name
-    val action = new Action {
+    new Action {
       val name = actionName(name0)
       type TMessage = T
       val extractors = extrs
       def backend = bk
     }
-    (action, addAction(action))
   }
 
   def from = cats.sequence.sequenceRecord

@@ -88,6 +88,13 @@ case class Endpoint(
 
 object Endpoint {
   @SerialVersionUID(1L)
-  case class Prefix(value: String) extends AnyVal
+  class Prefix private (val value: String) extends AnyVal
 
+  object Prefix {
+    val root = apply("/")
+    def apply(value: String): Prefix = {
+      assert(value.startsWith("/"), "prefix must start with /")
+      new Prefix(value)
+    }
+  }
 }

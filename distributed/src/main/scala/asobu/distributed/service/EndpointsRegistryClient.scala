@@ -1,5 +1,7 @@
 package asobu.distributed.service
 
+import java.net.URLEncoder
+
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
@@ -11,7 +13,6 @@ import scala.concurrent.Future
 
 trait EndpointsRegistryClient {
   def add(endpointDefinition: EndpointDefinition): Future[Unit]
-  def prefix: Prefix
 
   /**
    * Used for versionning Endpoints, endpointRegistry won't replace newly received endpoints with the same id and same build number
@@ -22,7 +23,6 @@ trait EndpointsRegistryClient {
 
 case class EndpointsRegistryClientImp(
     registry: EndpointsRegistry,
-    prefix: Prefix = Prefix("/"),
     buildNumber: Option[BuildNumber] = None
 )(
     implicit

@@ -64,29 +64,27 @@ object End2EndSpec {
       }
 
       //The routes file is in resources/TestController.routes
-      case class TestController(catServiceBackend: ActorRef)(implicit epc: EndpointsRegistryClient, system: ActorSystem) extends DistributedController {
+      case class TestController(catServiceBackend: ActorRef) extends DistributedController {
         import Domain._
         implicit val catFormat = Json.format[Cat]
         import concurrent.ExecutionContext.Implicits.global
         import asobu.dsl.DefaultExtractorImplicits._
-
-        handle(
-          "cats",
-          process[CatRequest]()
-        )(
-            using(catServiceBackend).
-              expect[Cat] >>
-              respondJson(Ok)
-          )
+        val actions = List(
+          handle(
+            "cats",
+            process[CatRequest]()
+          )(
+              using(catServiceBackend).
+                expect[Cat] >>
+                respondJson(Ok)
+            )
+        )
       }
 
       case class App(implicit system: ActorSystem) {
-        implicit val prefix = Prefix("/api")
-        init { implicit rc ⇒
-          List(
-            TestController(testServiceBackendRef)
-          )
-        }
+        init(Prefix("/api"))(
+          TestController(testServiceBackendRef)
+        )
       }
     }
 

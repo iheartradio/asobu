@@ -52,9 +52,8 @@ object Backend extends App {
     Some(doc)
   }
 
-  init { implicit rec =>
-    List(
-      AMixedController(factorialBE, studentService)
-    )
-  }
+  init(Prefix("/api"))(
+    AMixedController(factorialBE, studentService)
+  )
+
 }

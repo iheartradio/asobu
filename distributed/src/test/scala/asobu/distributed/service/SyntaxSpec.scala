@@ -42,34 +42,34 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
   def is(implicit ee: ExecutionEnv) = {
     "can build endpoint extracting params only" >> new SyntaxScope {
-      val (_, endpointF) = handle(
+      val endpoint = endpointOf(handle(
         "anEndpoint",
         process[Input]()
-      )(using(testBE).expect[Output] >> respond(Ok))
+      )(using(testBE).expect[Output] >> respond(Ok)))
 
-      endpointF.map(isSerializable) must beTrue.await
+      endpoint must beSerializable
     }
 
     "can build endpoint extracting params and body only" >> new SyntaxScope {
-      val (_, endpointF) = handle(
+      val endpoint = endpointOf(handle(
         "anEndpoint",
         process[Input](fromJsonBody[Input])
-      )(using(testBE).expect[Output] >> respond(Ok))
+      )(using(testBE).expect[Output] >> respond(Ok)))
 
-      endpointF.map(isSerializable) must beTrue.await
+      endpoint must beSerializable
     }
 
     "can build endpoint extracting params and body as nested field" >> new SyntaxScope {
-      val (_, endpointF) = handle(
+      val endpoint = endpointOf(handle(
         "anEndpoint",
         process[NestedInput](from(child = jsonBody[Input]))
-      )(using(testBE).expect[Output] >> respond(Ok))
+      )(using(testBE).expect[Output] >> respond(Ok)))
 
-      endpointF.map(isSerializable) must beTrue.await
+      endpoint must beSerializable
     }
 
     "can build endpoint extracting param body, and header" >> new SyntaxScope {
-      val (action, endpointF) = handle(
+      val action = handle(
         "anEndpoint",
         process[LargeInput](
           from(flagInHeader = header[Boolean]("someheaderField")),
@@ -77,13 +77,16 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
         )
       )(using(testBE).expect[Output] >> respond(Ok))
 
-      endpointF.map(isSerializable) must beTrue.await
+      val endpoint = endpointOf(action)
+
+      endpoint must beSerializable
 
       val params = RouteParams(Map.empty, Map.empty)
       val req = FakeRequest().withHeaders("someheaderField" → "true").withJsonBody(Json.obj("a" → JsString("avalue"), "b" → JsNumber(10)))
 
       val expectedExtracted = Record(flagInHeader = true).asInstanceOf[action.ExtractedRemotely] //todo find a way to refine action.ExtractedRemotely
-      val remoteResult = endpointF.flatMap(_.remoteExtractor.run((params, req)).toEither)
+
+      val remoteResult = endpoint.remoteExtractor.run((params, req)).toEither
 
       remoteResult must beRight(expectedExtracted: Any).await
 
@@ -101,8 +104,12 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 trait SyntaxScope extends ScopeWithActor with Controller with Syntax with PredefinedDefs {
   import play.api.http.HttpVerbs._
 
-  override private[service] def findRoute(action: Action): Route =
-    MockRoute(handlerClass = action.getClass.getName, pathParts = Nil)
+  def endpointOf(action: Action): EndpointDefinition = {
+    val route = MockRoute(handlerClass = action.getClass.getName, pathParts = Nil)
+    action.endpointDefinition(route, Prefix.root, None)
+  }
+
+  def actions: List[Action] = Nil
 
 }
 

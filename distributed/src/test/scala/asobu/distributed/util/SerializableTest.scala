@@ -1,11 +1,13 @@
 package asobu.distributed.util
 
-import akka.actor.ActorSystem
+import org.specs2.matcher._
 
 import scala.util.control.NonFatal
+import scala.language.implicitConversions
+import MatchersCreation._
 
 trait SerializableTest {
-  def isSerializable[T](a: T)(implicit system: ActorSystem = ActorSystem()): Boolean = {
+  def isSerializable[T](a: T): Boolean = {
     import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
     val baos = new ByteArrayOutputStream()
     val oos = new ObjectOutputStream(baos)
@@ -25,5 +27,9 @@ trait SerializableTest {
       oos.close()
       if (ois != null) ois.close()
     }
+  }
+
+  def beSerializable[T]: Matcher[T] = { t: T ⇒
+    (isSerializable(t), s" ${t} is not serializable")
   }
 }
