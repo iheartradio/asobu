@@ -55,6 +55,7 @@ case class ProcessResult(content: Option[String])
 class SyntaxSpec extends PlaySpecification {
   import SyntaxSpec._
   import asobu.dsl.DefaultImplicits._
+  val defaultTimeout = 10.seconds
 
   val authenticated: Filter[Any] = (req, result) ⇒ {
     req.headers.get("sessionId") match {
@@ -192,13 +193,13 @@ class SyntaxSpec extends PlaySpecification {
 
       val result1: Future[Result] = call(action, reqWithAuthInfo)
 
-      result1.map(_.header.status) must be_==(OK).await
+      result1.map(_.header.status) must be_==(OK).awaitFor(defaultTimeout)
 
       val reqWithoutAuthInfo = FakeRequest()
 
       val result2: Future[Result] = call(action, reqWithoutAuthInfo)
 
-      result2.map(_.header.status) must be_==(UNAUTHORIZED).await
+      result2.map(_.header.status) must be_==(UNAUTHORIZED).awaitFor(defaultTimeout)
     }
 
     case class SessionInfo(sessionId: String)
@@ -223,7 +224,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val result1: Future[Result] = call(action, reqWithAuthInfo)
 
-      result1.map(_.header.status) must be_==(OK).await
+      result1.map(_.header.status) must be_==(OK).awaitFor(defaultTimeout)
 
       (contentAsJson(result1) \ "id").as[String] === "3"
 
@@ -231,7 +232,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val result2: Future[Result] = call(action, reqWithoutAuthInfo)
 
-      result2.map(_.header.status) must be_==(UNAUTHORIZED).await
+      result2.map(_.header.status) must be_==(UNAUTHORIZED).awaitFor(defaultTimeout)
 
     }
 
@@ -242,12 +243,12 @@ class SyntaxSpec extends PlaySpecification {
 
       "returns original result when field is filled" >> { implicit ev: ExecutionEnv ⇒
         val result = dir(FakeRequest().withBody(ProcessResult(Some("content"))))
-        result.map(_.header.status) must be_==(OK).await
+        result.map(_.header.status) must be_==(OK).awaitFor(defaultTimeout)
       }
 
       "returns alternative result when field is empty" >> { implicit ev: ExecutionEnv ⇒
         val result = dir(FakeRequest().withBody(ProcessResult(None)))
-        result.map(_.header.status) must be_==(NOT_FOUND).await
+        result.map(_.header.status) must be_==(NOT_FOUND).awaitFor(defaultTimeout)
       }
 
     }
@@ -265,7 +266,7 @@ class SyntaxSpec extends PlaySpecification {
 
       val result: Future[Result] = call(endpoint("myId", "mike", 3.5), FakeRequest().withHeaders("sessionId" → "2324"))
 
-      result.map(_.header.headers.get(ETAG)) must beSome[String].await
+      result.map(_.header.headers.get(ETAG)) must beSome[String].awaitFor(defaultTimeout)
 
     }
   }
