@@ -23,7 +23,7 @@ trait ControllerRegister {
     ao: Timeout,
     buildNumber: Option[BuildNumber] = None,
     apiDocGenerator: ApiDocGenerator = voidApiDocGenerator
-  ): Seq[Future[EndpointDefinition]] = init(prefix → controllers)
+  ): Future[List[EndpointDefinition]] = init(prefix → controllers.toList)
 
   /**
    * Init controllers (add their actions to [[ EndpointRegistry ]]
@@ -34,13 +34,13 @@ trait ControllerRegister {
    * @param buildNumber
    * @param apiDocGenerator
    */
-  def init(controllers: (Prefix, Seq[Controller])*)(
+  def init(controllers: (Prefix, List[Controller])*)(
     implicit
     system: ActorSystem,
     ao: Timeout,
     buildNumber: Option[BuildNumber],
     apiDocGenerator: ApiDocGenerator
-  ): Seq[Future[EndpointDefinition]] = {
+  ): Future[List[EndpointDefinition]] = {
 
     import system.dispatcher
     val registry: EndpointsRegistry = DefaultEndpointsRegistry()
@@ -67,11 +67,11 @@ trait ControllerRegister {
 
     }
 
-    controllers.flatMap {
+    Future.sequence(controllers.flatMap {
       case (prefix, controllers) ⇒
         ApiDocumentationReporter(registry)(routes ⇒ apiDocGenerator(prefix, routes)).report(controllers)
         controllers.flatMap(registerController(prefix, _))
-    }
+    }.toList)
 
   }
 
