@@ -1,16 +1,16 @@
 package asobu.distributed.service
 
+import akka.ConfigurationException
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.util.Timeout
-import asobu.distributed.{EndpointDefinition, DefaultEndpointsRegistry, EndpointsRegistry}
+import asobu.distributed.{SystemValidator, EndpointDefinition, DefaultEndpointsRegistry, EndpointsRegistry}
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service._
 import play.api.libs.json.JsObject
 import play.routes.compiler.{HandlerCall, Route}
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.Try
+import scala.concurrent.Future
 
 trait ControllerRegister {
 
@@ -67,12 +67,15 @@ trait ControllerRegister {
 
     }
 
-    Future.sequence(controllers.flatMap {
-      case (prefix, controllers) ⇒
-        ApiDocumentationReporter(registry)(routes ⇒ apiDocGenerator(prefix, routes)).report(controllers)
-        controllers.flatMap(registerController(prefix, _))
-    }.toList)
-
+    SystemValidator.validate match {
+      case Left(error) ⇒ Future.failed(new ConfigurationException(error))
+      case _ ⇒
+        Future.sequence(controllers.flatMap {
+          case (prefix, controllers) ⇒
+            ApiDocumentationReporter(registry)(routes ⇒ apiDocGenerator(prefix, routes)).report(controllers)
+            controllers.flatMap(registerController(prefix, _))
+        }.toList)
+    }
   }
 
 }

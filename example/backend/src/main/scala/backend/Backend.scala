@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.{EndpointsRegistry, DefaultEndpointsRegistry}
-import asobu.distributed.service.{ApiDocumentationReporter, EndpointsRegistryClientImp, EndpointsRegistryClient, init}
+import asobu.distributed.service._
 import backend.endpoints.AMixedController
 import backend.school.StudentService
 import com.iheart.playSwagger.SwaggerSpecGenerator
@@ -16,7 +16,6 @@ import play.api.libs.json.JsObject
 import play.routes.compiler.Route
 import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap
-import scala.util.Try
 import concurrent.duration._
 
 /**
@@ -52,8 +51,14 @@ object Backend extends App {
     Some(doc)
   }
 
+  implicit val bi: BuildNumber = BuildInfo
+
+  import system.dispatcher
   init(Prefix("/api"))(
     AMixedController(factorialBE, studentService)
-  )
+  ).onFailure {
+    case e => throw e
+  }
+
 
 }
