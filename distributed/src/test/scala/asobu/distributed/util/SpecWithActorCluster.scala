@@ -12,7 +12,7 @@ trait SpecWithActorCluster extends Specification with AfterAll {
   sequential
   lazy val port = Random.nextInt(21444) + 2560
   implicit lazy val system = {
-    TestClusterActorSystem.create(port)
+    TestClusterActorSystem.create(port)()
   }
   lazy val role = TestClusterActorSystem.role
 
@@ -24,14 +24,14 @@ trait SpecWithActorCluster extends Specification with AfterAll {
 object TestClusterActorSystem {
 
   val role = "test"
-  def create(port: Int = 2551) = {
+  def create(port: Int = 2551)(seedPort: Int = port) = {
     ActorSystem("test", ConfigFactory.parseString(
       s"""
          | akka {
          |   actor.provider = akka.cluster.ClusterActorRefProvider
          |   loglevel = "ERROR"
          |   cluster {
-         |     seed-nodes = ["akka.tcp://application@127.0.0.1:$port"]
+         |     seed-nodes = ["akka.tcp://application@127.0.0.1:$seedPort"]
          |     roles = [ $role ]
          |     min-nr-of-members = 1
          |   }

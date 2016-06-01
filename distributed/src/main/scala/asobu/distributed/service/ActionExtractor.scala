@@ -30,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * Extractor for action to extract information out of request either at the gateway side (`remoteExtractorDef`)
  * or at the service side (`localExtract`)
+ *
  * @tparam TMessage
  */
 trait ActionExtractor[TMessage] {
@@ -42,7 +43,7 @@ trait ActionExtractor[TMessage] {
 
   val remoteExtractorDef: RemoteExtractorDef[LToSend, LParam, LExtra]
 
-  def localExtract(dr: DistributedRequest[LToSend]): ExtractResult[TMessage]
+  def localExtract(dr: DistributedRequest[LToSend])(implicit ex: ExecutionContext): ExtractResult[TMessage]
 }
 
 object ActionExtractor {
@@ -78,8 +79,7 @@ object ActionExtractor {
       type LExtra = LRemoteExtra
       val remoteExtractorDef = RemoteExtractorDef(rpeb, remoteRequestExtractorDefs)
 
-      def localExtract(dr: DistributedRequest[LToSend]): ExtractResult[TMessage] = {
-        import scala.concurrent.ExecutionContext.Implicits.global
+      def localExtract(dr: DistributedRequest[LToSend])(implicit executionContext: ExecutionContext): ExtractResult[TMessage] = {
         bodyExtractor.run(dr.body).map { body ⇒
           val repr = combineTo(dr.extracted, body)
           gen.from(repr)
@@ -101,8 +101,18 @@ object ActionExtractor {
       combineTo: CombineTo[TRepr, HNil, TRepr],
       rpeb: RouteParamsExtractorBuilder[TRepr]
     ): ActionExtractor.Aux[TMessage, TRepr, TRepr, HNil] = apply(BodyExtractor.empty)
-  }
 
+    def apply[LParamExtracted <: HList, LRemoteExtra <: HList, LBody <: HList, LExtracted <: HList, TRepr <: HList](
+      remoteRequestExtractorDefs: RequestExtractorDefinition[LRemoteExtra]
+    )(implicit
+      gen: LabelledGeneric.Aux[TMessage, TRepr],
+      r: RestOf.Aux[TRepr, LRemoteExtra, LParamExtracted],
+      prep: Prepend.Aux[LParamExtracted, LRemoteExtra, LExtracted],
+      combineTo: CombineTo[LExtracted, HNil, TRepr],
+      rpeb: RouteParamsExtractorBuilder[LParamExtracted]): ActionExtractor.Aux[TMessage, LExtracted, LParamExtracted, LRemoteExtra] =
+      apply(remoteRequestExtractorDefs, BodyExtractor.empty)
+
+  }
   def build[TMessage] = new builder[TMessage]
 
 }
@@ -118,9 +128,9 @@ case class RemoteExtractorDef[LExtracted <: HList, LParamExtracted <: HList, LRe
    *
    * @return
    */
-  def extractor(implicit ex: ExecutionContext): RemoteExtractor[LExtracted] = {
+  def extractor(implicit ec: ExecutionContext): RemoteExtractor[LExtracted] = {
     val rpe = routeParamsExtractorBuilder()
-    Extractor.zip(rpe.mapF(r ⇒ fromXor(r.v)), requestExtractorDefinition.apply())
+    Extractor.zip(rpe.mapF(r ⇒ fromXor(r.v)), requestExtractorDefinition.apply(ec))
   }
 
 }

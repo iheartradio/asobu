@@ -6,7 +6,7 @@ import simulacrum.typeclass
 import scala.util.Try
 
 @typeclass
-sealed trait Read[T] {
+sealed trait Read[T] extends Serializable {
   def parse(str: String): Try[T]
 }
 

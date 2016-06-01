@@ -1,11 +1,14 @@
 package asobu.distributed
 
-import akka.actor.{ActorSystem, ActorRef}
-import akka.util.Timeout
+import _root_.akka.actor.{ActorSystem, ActorRef}
+import _root_.akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.{GatewayRouter, DefaultHandlerBridgeProps, Gateway}
 import asobu.distributed.service._
-import asobu.distributed.util.SpecWithActorCluster
+import asobu.distributed.util.{TestClusterActorSystem, SpecWithActorCluster}
+import asobu.dsl._
+import asobu.dsl.extractors.HeaderExtractors
+import asobu.dsl.util.Read
 import junit.framework.TestResult
 import play.api.libs.json.{JsNumber, JsString, Json}
 import play.api.mvc.Results._
@@ -30,11 +33,22 @@ class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
 
   }
 
-  "GET /api/dogs/:catId returns 404" >> {
-    val req = FakeRequest(GET, "/api/dogs/3")
+  "GET /api/dogs/:name?birthYear=2012 returns OK Json response" >> {
+    val req = FakeRequest(GET, "/api/dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
+    val resp = gatewayAction(req)
+    status(resp) === OK
+    (contentAsJson(resp) \ "age").get === JsNumber(2020 - 2012)
+    (contentAsJson(resp) \ "breed").get === JsString("golden")
+    (contentAsJson(resp) \ "owner").get === JsString("Brian")
+
+  }
+
+  "GET /api/human/:catId returns 404" >> {
+    val req = FakeRequest(GET, "/api/human/3")
     val resp = gatewayAction(req)
     status(resp) === NOT_FOUND
   }
+
 }
 
 object End2EndSpec {
@@ -49,24 +63,28 @@ object End2EndSpec {
     }
 
     object ServiceBackend {
-      import akka.actor.ActorDSL._
+      import _root_.akka.actor.ActorDSL._
 
       def testServiceBackendRef(implicit system: ActorSystem) = actor(new Act {
         import Domain._
         become {
-          case CatRequest(id) ⇒ sender() ! Cat(id, Random.nextInt(20))
+          case CatRequest(id)           ⇒ sender() ! Cat(id, Random.nextInt(20))
+          case DogRequest(_, owner, by) ⇒ sender() ! Dog("big", 2020 - by, "golden", owner)
         }
       })
 
       object Domain {
         case class CatRequest(catId: String)
         case class Cat(id: String, age: Int)
+        case class DogRequest(name: String, owner: String, birthYear: Int)
+        case class Dog(id: String, age: Int, breed: String, owner: String)
       }
 
       //The routes file is in resources/TestController.routes
-      case class TestController(catServiceBackend: ActorRef) extends DistributedController {
+      case class TestController(serviceBackend: ActorRef) extends DistributedController {
         import Domain._
         implicit val catFormat = Json.format[Cat]
+        implicit val dogFormat = Json.format[Dog]
         import concurrent.ExecutionContext.Implicits.global
         import asobu.dsl.DefaultExtractorImplicits._
         val actions = List(
@@ -74,8 +92,19 @@ object End2EndSpec {
             "cats",
             process[CatRequest]()
           )(
-              using(catServiceBackend).
+              using(serviceBackend).
                 expect[Cat] >>
+                respondJson(Ok)
+            ),
+
+          handle(
+            "dogs",
+            process[DogRequest](
+              from(owner = header[String]("owner")) //todo: this should fail
+            )
+          )(
+              using(serviceBackend).
+                expect[Dog] >>
                 respondJson(Ok)
             )
         )

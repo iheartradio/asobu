@@ -1,1 +1,3 @@
 GET   /cats/:catId       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.cats(catId: String)
+
+GET   /dogs/:name       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.dogs(name: String, birthYear: Int)

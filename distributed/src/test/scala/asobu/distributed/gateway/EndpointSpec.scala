@@ -61,7 +61,7 @@ object EndpointSpec extends PlaySpecification with Mockito {
   "unapply" >> {
 
     def extractParams(epd: EndpointDefinition, request: RequestHeader): Option[RouteParams] = {
-      implicit val system = TestClusterActorSystem.create(Random.nextInt(21444) + 2560)
+      implicit val system = TestClusterActorSystem.create(Random.nextInt(21444) + 2560)()
       val endpoint = Endpoint(epd)
       val result = request match {
         case endpoint(params) ⇒ Some(params)

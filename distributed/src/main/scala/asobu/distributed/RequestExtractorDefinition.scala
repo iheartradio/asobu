@@ -12,14 +12,14 @@ import shapeless.ops.hlist._
 import shapeless._
 import cats.std.future._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Isolates extractor definition from actual extraction logic, will allow api to be more binary compatible
  *
  * @tparam T
  */
-trait RequestExtractorDefinition[T] extends (() ⇒ RequestExtractor[T]) with Serializable
+trait RequestExtractorDefinition[T] extends (ExecutionContext ⇒ RequestExtractor[T]) with Serializable
 
 object RequestExtractorDefinition extends RequestExtractorDefinitionFunctions with RequestExtractorDefinitionOps {
   type Void = RequestExtractorDefinition[HNil]
@@ -44,17 +44,17 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
 
       def ap[A, B](ff: RequestExtractorDefinition[(A) ⇒ B])(fa: RequestExtractorDefinition[A]) =
         new RequestExtractorDefinition[B] {
-          def apply = appR.ap(ff())(fa())
+          def apply(ec: ExecutionContext) = appR.ap(ff(ec))(fa(ec))
         }
 
       def pure[A](x: A) = new RequestExtractorDefinition[A] {
-        def apply(): RequestExtractor[A] = appR.pure(x)
+        def apply(ex: ExecutionContext): RequestExtractor[A] = appR.pure(x)
       }
 
     }
 
   val empty: RequestExtractorDefinition[HNil] = new RequestExtractorDefinition[HNil] {
-    def apply = RequestExtractor.empty
+    def apply(ex: ExecutionContext) = RequestExtractor.empty
   }
 
   def compose = cats.sequence.sequenceRecord
@@ -71,7 +71,7 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
     implicit
     prepend: Prepend.Aux[LA, LB, LOut]
   ): RequestExtractorDefinition[LOut] = new RequestExtractorDefinition[LOut] {
-    def apply: RequestExtractor[LOut] = Extractor.combine(ea(), eb())
+    def apply(ec: ExecutionContext): RequestExtractor[LOut] = Extractor.combine(ea(ec), eb(ec))
   }
 
   implicit class RequestExtractorDefinitionOps[T](self: RequestExtractorDefinition[T]) {
@@ -90,8 +90,10 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
 object PredefinedDefs {
   @SerialVersionUID(1L)
   case class Header[T: Read](key: String)(implicit fbr: FallbackResult) extends RequestExtractorDefinition[T] {
-    import concurrent.ExecutionContext.Implicits.global
-    def apply() = HeaderExtractors.header(key)
+    def apply(ec0: ExecutionContext) = {
+      implicit val ec = ec0
+      HeaderExtractors.header(key)
+    }
   }
 }
 

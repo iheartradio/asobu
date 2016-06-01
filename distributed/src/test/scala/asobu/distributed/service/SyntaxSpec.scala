@@ -92,6 +92,7 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
       val distributedRequest = DistributedRequest(expectedExtracted, req.body)
 
+      import scala.concurrent.ExecutionContext.Implicits.global
       val localResult = action.extractors.localExtract(distributedRequest).toEither
 
       localResult must beRight(LargeInput(a = "avalue", b = 10, flagInHeader = true)).await
