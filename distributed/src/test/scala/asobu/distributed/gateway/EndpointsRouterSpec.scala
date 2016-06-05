@@ -5,7 +5,7 @@ import akka.testkit.TestProbe
 import asobu.distributed.gateway.EndpointsRouter.Update
 import asobu.distributed.service.Action.DistributedRequest
 import asobu.distributed.util.{ScopeWithActor, SpecWithActorCluster}
-import asobu.distributed.{EndpointDefinition, NullaryEndpointDefinition}
+import asobu.distributed.{util, EndpointDefinition, NullaryEndpointDefinition}
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.EndpointDefinitionParser
 import play.api.test.FakeRequest
@@ -13,6 +13,7 @@ import play.api.test.FakeRequest
 import play.routes.compiler._
 import shapeless.HNil
 import concurrent.duration._
+import util.implicits._
 
 class EndpointsRouterSpec extends SpecWithActorCluster {
 

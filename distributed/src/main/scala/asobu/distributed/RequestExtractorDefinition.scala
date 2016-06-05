@@ -11,7 +11,7 @@ import play.api.mvc.Result
 import shapeless.ops.hlist._
 import shapeless._
 import cats.std.future._
-
+import CustomRequestExtractorDefinition.Interpreter
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -19,7 +19,21 @@ import scala.concurrent.{ExecutionContext, Future}
  *
  * @tparam T
  */
-trait RequestExtractorDefinition[T] extends (ExecutionContext ⇒ RequestExtractor[T]) with Serializable
+trait RequestExtractorDefinition[T] extends Serializable {
+  def apply(interpreter: Interpreter)(implicit ec: ExecutionContext): RequestExtractor[T]
+}
+
+trait CustomRequestExtractorDefinition[T] extends RequestExtractorDefinition[T] {
+  final def apply(interpreter: Interpreter)(implicit ec: ExecutionContext): RequestExtractor[T] =
+    interpreter.interpret(this)
+}
+
+object CustomRequestExtractorDefinition {
+  trait Interpreter {
+    def interpret[T](cred: CustomRequestExtractorDefinition[T]): RequestExtractor[T]
+  }
+  val interpreterClassConfigKey = "extractorDefinitionInterpreterClass"
+}
 
 object RequestExtractorDefinition extends RequestExtractorDefinitionFunctions with RequestExtractorDefinitionOps {
   type Void = RequestExtractorDefinition[HNil]
@@ -39,22 +53,25 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
 
   implicit def app: Applicative[RequestExtractorDefinition] =
     new Applicative[RequestExtractorDefinition] {
-      import LocalExecutionContext.instance //the definition composing always happens locally, and needs to be serializable
-      val appR = Applicative[RequestExtractor]
+
+      val appR = {
+        import LocalExecutionContext.instance //the definition composing always happens locally, and needs to be serializable
+        Applicative[RequestExtractor]
+      }
 
       def ap[A, B](ff: RequestExtractorDefinition[(A) ⇒ B])(fa: RequestExtractorDefinition[A]) =
         new RequestExtractorDefinition[B] {
-          def apply(ec: ExecutionContext) = appR.ap(ff(ec))(fa(ec))
+          def apply(interpreter: Interpreter)(implicit ec: ExecutionContext) = appR.ap(ff(interpreter))(fa(interpreter))
         }
 
       def pure[A](x: A) = new RequestExtractorDefinition[A] {
-        def apply(ex: ExecutionContext): RequestExtractor[A] = appR.pure(x)
+        def apply(interpreter: Interpreter)(implicit ex: ExecutionContext): RequestExtractor[A] = appR.pure(x)
       }
 
     }
 
   val empty: RequestExtractorDefinition[HNil] = new RequestExtractorDefinition[HNil] {
-    def apply(ex: ExecutionContext) = RequestExtractor.empty
+    def apply(interpreter: Interpreter)(implicit ex: ExecutionContext) = RequestExtractor.empty
   }
 
   def compose = cats.sequence.sequenceRecord
@@ -71,7 +88,8 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
     implicit
     prepend: Prepend.Aux[LA, LB, LOut]
   ): RequestExtractorDefinition[LOut] = new RequestExtractorDefinition[LOut] {
-    def apply(ec: ExecutionContext): RequestExtractor[LOut] = Extractor.combine(ea(ec), eb(ec))
+    def apply(interpreter: Interpreter)(implicit ec: ExecutionContext): RequestExtractor[LOut] =
+      Extractor.combine(ea(interpreter), eb(interpreter))
   }
 
   implicit class RequestExtractorDefinitionOps[T](self: RequestExtractorDefinition[T]) {
@@ -90,8 +108,7 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
 object PredefinedDefs {
   @SerialVersionUID(1L)
   case class Header[T: Read](key: String)(implicit fbr: FallbackResult) extends RequestExtractorDefinition[T] {
-    def apply(ec0: ExecutionContext) = {
-      implicit val ec = ec0
+    def apply(interpreter: Interpreter)(implicit ec: ExecutionContext) = {
       HeaderExtractors.header(key)
     }
   }

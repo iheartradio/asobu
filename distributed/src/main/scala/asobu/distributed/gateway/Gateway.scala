@@ -5,12 +5,15 @@ import javax.inject.{Provider, Inject, Singleton}
 import akka.actor.{Deploy, ActorRef, ActorSystem, Props}
 
 import akka.routing.{SmallestMailboxPool, DefaultOptimalSizeExploringResizer, RoundRobinPool}
-import asobu.distributed.{SystemValidator, DefaultEndpointsRegistry, EndpointDefinition, EndpointsRegistry}
+import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
+import asobu.distributed._
 import play.api.{Configuration, Environment}
-import play.api.inject.Module
+import play.api.inject.{Binding, Module}
+
+import scala.reflect.ClassTag
 
 @Singleton
-class Gateway @Inject() (implicit system: ActorSystem, handlerBridgeProps: HandlerBridgeProps) {
+class Gateway @Inject() (implicit system: ActorSystem, handlerBridgeProps: HandlerBridgeProps, interpreter: Interpreter) {
 
   val validatorResult = SystemValidator.validate
   assert(validatorResult.isRight, validatorResult.left.get)
@@ -45,20 +48,30 @@ class Gateway @Inject() (implicit system: ActorSystem, handlerBridgeProps: Handl
  * Eagerly start the Gateway
  */
 class GateWayModule extends Module {
+
   protected def defaultBridgeClass: Class[_ <: HandlerBridgeProps] = classOf[DefaultHandlerBridgeProps]
+  protected def defaultInterpreterClass: Class[_ <: Interpreter] = classOf[DisabledCustomExtractorInterpreter]
+
+  private class syntax[T: ClassTag](self: Option[Class[_ <: T]]) {
+    def withDefault[DT <: T](defaultClass: Class[_ <: T]): Binding[T] =
+      bind[T].to(self.getOrElse(defaultClass))
+  }
 
   final def bindings(
     environment: Environment,
     configuration: Configuration
   ) = {
-    val bridgeClass: Class[_ <: HandlerBridgeProps] = {
-      val bridgePropsClassName = configuration.getString("asobu.bridgePropsClass")
-      bridgePropsClassName.map(n ⇒ environment.classLoader.loadClass(n).asSubclass(classOf[HandlerBridgeProps]))
-    }.getOrElse(defaultBridgeClass)
+
+    def bindFromConfig[T: ClassTag](cfgName: String): syntax[T] = {
+      val bindClass: Class[T] = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+      val className = configuration.getString(s"asobu.$cfgName")
+      new syntax[T](className.map(n ⇒ environment.classLoader.loadClass(n).asSubclass(bindClass)))
+    }
 
     Seq(
       bind[Gateway].toSelf.eagerly,
-      bind[HandlerBridgeProps].to(bridgeClass)
+      bindFromConfig[HandlerBridgeProps]("bridgePropsClass").withDefault(defaultBridgeClass),
+      bindFromConfig[Interpreter](CustomRequestExtractorDefinition.interpreterClassConfigKey).withDefault(defaultInterpreterClass)
     )
   }
 }

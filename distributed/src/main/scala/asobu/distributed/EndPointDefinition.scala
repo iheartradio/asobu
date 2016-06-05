@@ -1,6 +1,7 @@
 package asobu.distributed
 
 import akka.actor.{ActorPath, ActorRef}
+import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.RoutesCompilerExtra._
 import asobu.distributed.service.ActionExtractor.RemoteExtractor
@@ -44,7 +45,7 @@ trait EndpointDefinition {
     s"$verb $path"
   }
 
-  def remoteExtractor(implicit ex: ExecutionContext): RemoteExtractor[T]
+  def remoteExtractor(interpreter: Interpreter)(implicit ex: ExecutionContext): RemoteExtractor[T]
 
 }
 
@@ -64,7 +65,7 @@ case class EndpointDefImpl[LExtracted <: HList, LParam <: HList, LExtra <: HList
 
   type T = LExtracted
 
-  def remoteExtractor(implicit ex: ExecutionContext): RemoteExtractor[T] = remoteExtractorDef.extractor
+  def remoteExtractor(interpreter: Interpreter)(implicit ex: ExecutionContext): RemoteExtractor[T] = remoteExtractorDef.extractor(interpreter: Interpreter)
 }
 
 /**
@@ -84,5 +85,5 @@ case class NullaryEndpointDefinition(
     ExtractResult.pure(HNil)
   }
 
-  def remoteExtractor(implicit ec: ExecutionContext) = Extractor.empty[(RouteParams, Request[AnyContent])]
+  def remoteExtractor(interpreter: Interpreter)(implicit ec: ExecutionContext) = Extractor.empty[(RouteParams, Request[AnyContent])]
 }

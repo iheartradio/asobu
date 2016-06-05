@@ -1,13 +1,14 @@
 package asobu.distributed.gateway
 
 import akka.actor.{ActorRef, ActorSystem}
-import asobu.distributed.{EndpointDefinition, EndpointDefImpl}
+import asobu.distributed.{util, EndpointDefinition, EndpointDefImpl}
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.RemoteExtractorDef
 import asobu.distributed.util.{SpecWithActorCluster, MockRoute}
 import org.specs2.mutable.Specification
 import org.specs2.specification.AfterAll
 import akka.actor.ActorDSL._
+import util.implicits._
 
 class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
   import scala.concurrent.ExecutionContext.Implicits.global

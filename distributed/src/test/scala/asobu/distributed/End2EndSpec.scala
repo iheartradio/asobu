@@ -2,6 +2,7 @@ package asobu.distributed
 
 import _root_.akka.actor.{ActorSystem, ActorRef}
 import _root_.akka.util.Timeout
+import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.{GatewayRouter, DefaultHandlerBridgeProps, Gateway}
 import asobu.distributed.service._
@@ -16,6 +17,7 @@ import concurrent.duration._
 import scala.util.{Random, Try}
 import play.api.http.HttpVerbs._
 import play.api.test.{PlaySpecification, FakeRequest}
+import util.implicits._
 
 class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
   import End2EndSpec._
@@ -56,8 +58,11 @@ object End2EndSpec {
 
   object DistributedSystem {
 
+    val interpreter = new Interpreter {
+      override def interpret[T](cred: CustomRequestExtractorDefinition[T]): RequestExtractor[T] = ???
+    }
     case class GatewayApp(implicit system: ActorSystem) {
-      implicit val gw = new Gateway()(system, new DefaultHandlerBridgeProps)
+      implicit val gw = new Gateway()(system, new DefaultHandlerBridgeProps, interpreter)
       import system.dispatcher
       val action = new GatewayRouter().handleAll
     }

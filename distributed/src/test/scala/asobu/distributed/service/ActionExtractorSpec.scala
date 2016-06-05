@@ -1,6 +1,6 @@
 package asobu.distributed.service
 
-import asobu.distributed.RequestExtractorDefinition
+import asobu.distributed.{util, RequestExtractorDefinition}
 import asobu.distributed.util.SerializableTest
 import asobu.dsl.{Extractor, ExtractResult}
 import asobu.dsl.ExtractorOps._
@@ -12,6 +12,7 @@ import play.api.test.FakeRequest
 import play.core.routing.RouteParams
 import shapeless._, record.Record
 import asobu.dsl.CatsInstances._
+import util.implicits._
 
 object ActionExtractorSpec extends Specification with SerializableTest {
   import RequestExtractorDefinition._
@@ -25,12 +26,12 @@ object ActionExtractorSpec extends Specification with SerializableTest {
 
     val reqExtractor = compose(foo = header[String]("foo_h"), bar2 = header[Boolean]("bar2"))
     val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val extractors = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
+    val actionExtractor = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
 
     val params = RouteParams(Map.empty, Map.empty)
     val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV", "bar2" → "true")
 
-    val result = extractors.remoteExtractorDef.extractor.run((params, req))
+    val result = actionExtractor.remoteExtractorDef.extractor(nullInterpreter).run((params, req))
     val expected = Record(foo = "foV", bar2 = true)
     result.toEither must beRight(expected).await
 
@@ -39,12 +40,12 @@ object ActionExtractorSpec extends Specification with SerializableTest {
   "can build extractor correctly with routesParams to extract" >> { implicit ev: ExecutionEnv ⇒
     val reqExtractor = compose(foo = header[String]("foo_h"))
     val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val extractors = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
+    val actionExtractor = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
 
     val params = RouteParams(Map.empty, Map("bar2" → Seq("true")))
     val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV")
 
-    val result = extractors.remoteExtractorDef.extractor.run((params, req))
+    val result = actionExtractor.remoteExtractorDef.extractor(nullInterpreter).run((params, req))
     val expected = Record(bar2 = true, foo = "foV")
     result.toEither must beRight(expected).await
 
@@ -53,23 +54,23 @@ object ActionExtractorSpec extends Specification with SerializableTest {
   "can build extractor correctly without bodyExtractor" >> { implicit ev: ExecutionEnv ⇒
     val reqExtractor = compose(foo = header[String]("foo_h"))
     val bodyExtractor = BodyExtractor.empty
-    val extractors = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
+    val actionExtractor = ActionExtractor.build[MyMessage](reqExtractor, bodyExtractor)
 
     val params = RouteParams(Map.empty, Map("bar2" → Seq("true"), "bar" → Seq("3")))
     val req: Request[AnyContent] = FakeRequest().withHeaders("foo_h" → "foV")
 
-    val result = extractors.remoteExtractorDef.extractor.run((params, req))
+    val result = actionExtractor.remoteExtractorDef.extractor(nullInterpreter).run((params, req))
     val expected = Record(bar = 3, bar2 = true, foo = "foV")
     result.toEither must beRight(expected).await
 
   }
 
   "can build extractor correctly without bodyExtractor and extra" >> { implicit ev: ExecutionEnv ⇒
-    val extractors = ActionExtractor.build[MyMessage](RequestExtractorDefinition.empty, BodyExtractor.empty)
+    val actionExtractor = ActionExtractor.build[MyMessage](RequestExtractorDefinition.empty, BodyExtractor.empty)
 
     val params = RouteParams(Map.empty, Map("bar2" → Seq("true"), "bar" → Seq("3"), "foo" → Seq("foV")))
 
-    val result = extractors.remoteExtractorDef.extractor.run((params, FakeRequest()))
+    val result = actionExtractor.remoteExtractorDef.extractor(nullInterpreter).run((params, FakeRequest()))
     val expected = Record(foo = "foV", bar = 3, bar2 = true)
 
     result.toEither must beRight(expected).await

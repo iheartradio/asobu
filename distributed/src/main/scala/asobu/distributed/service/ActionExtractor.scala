@@ -1,5 +1,6 @@
 package asobu.distributed.service
 
+import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.service.Action.DistributedRequest
 import asobu.distributed.service.ActionExtractor._
 import asobu.distributed.RequestExtractorDefinition
@@ -128,9 +129,9 @@ case class RemoteExtractorDef[LExtracted <: HList, LParamExtracted <: HList, LRe
    *
    * @return
    */
-  def extractor(implicit ec: ExecutionContext): RemoteExtractor[LExtracted] = {
+  def extractor(interpreter: Interpreter)(implicit ec: ExecutionContext): RemoteExtractor[LExtracted] = {
     val rpe = routeParamsExtractorBuilder()
-    Extractor.zip(rpe.mapF(r ⇒ fromXor(r.v)), requestExtractorDefinition.apply(ec))
+    Extractor.zip(rpe.mapF(r ⇒ fromXor(r.v)), requestExtractorDefinition.apply(interpreter))
   }
 
 }

@@ -6,7 +6,7 @@ import akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.Action.DistributedRequest
 import asobu.distributed.service.ActionExtractorSpec._
-import asobu.distributed.{PredefinedDefs, EndpointDefinition}
+import asobu.distributed.{util, PredefinedDefs, EndpointDefinition}
 import asobu.distributed.util.{MockRoute, ScopeWithActor, SpecWithActorCluster, SerializableTest}
 import asobu.dsl.ExtractResult
 import asobu.dsl.extractors.JsonBodyExtractor
@@ -23,6 +23,7 @@ import concurrent.duration._
 import scala.concurrent.Future
 import play.api.test.FakeRequest
 import cats.std.future._
+import util.implicits._
 
 class SyntaxSpec extends SpecWithActorCluster with SerializableTest with ExecutionEnvironment {
   import asobu.distributed.service.SyntaxSpec._
@@ -86,7 +87,7 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
       val expectedExtracted = Record(flagInHeader = true).asInstanceOf[action.ExtractedRemotely] //todo find a way to refine action.ExtractedRemotely
 
-      val remoteResult = endpoint.remoteExtractor.run((params, req)).toEither
+      val remoteResult = endpoint.remoteExtractor(nullInterpreter).run((params, req)).toEither
 
       remoteResult must beRight(expectedExtracted: Any).await
 

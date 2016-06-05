@@ -2,7 +2,7 @@ package asobu.distributed.gateway
 
 import akka.actor._
 import asobu.distributed.util.{TestClusterActorSystem}
-import asobu.distributed.{EndpointDefinition, NullaryEndpointDefinition}
+import asobu.distributed.{util, EndpointDefinition, NullaryEndpointDefinition}
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.EndpointDefinitionParser
 import org.specs2.mock.Mockito
@@ -12,7 +12,7 @@ import play.core.routing.RouteParams
 
 import play.routes.compiler._
 import shapeless.HNil
-
+import util.implicits._
 import scala.util.Random
 
 object EndpointSpec extends PlaySpecification with Mockito {

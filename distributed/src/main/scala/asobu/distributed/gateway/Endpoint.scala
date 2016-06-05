@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadLocalRandom
 import akka.actor.{PoisonPill, ActorRef, ActorRefFactory}
 import akka.routing.RoundRobinGroup
 import akka.util.Timeout
+import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.service.Action.{DistributedResult, DistributedRequest}
 import asobu.distributed.EndpointDefinition
 import asobu.distributed.service.ActionExtractor.RemoteExtractor
@@ -35,7 +36,10 @@ trait EndpointHandler {
 case class Endpoint(
     definition: EndpointDefinition,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-)(implicit arf: ActorRefFactory, ec: ExecutionContext) extends EndpointRoute with EndpointHandler {
+)(implicit
+  arf: ActorRefFactory,
+    ec: ExecutionContext,
+    interpreter: Interpreter) extends EndpointRoute with EndpointHandler {
 
   type T = definition.T
 
@@ -72,7 +76,7 @@ case class Endpoint(
     ).flatMap(identity)
   }
 
-  lazy val extractor: RemoteExtractor[T] = definition.remoteExtractor
+  lazy val extractor: RemoteExtractor[T] = definition.remoteExtractor(interpreter)
 
   private lazy val routeExtractors: ParamsExtractor = {
     val localParts = if (routeInfo.path.parts.nonEmpty) StaticPart(defaultPrefix) +: routeInfo.path.parts else Nil

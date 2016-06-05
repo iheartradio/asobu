@@ -3,6 +3,7 @@ package asobu.distributed.gateway
 import akka.actor._
 import akka.cluster.ddata.LWWMap
 import akka.cluster.ddata.Replicator._
+import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.{EndpointDefinition, EndpointsRegistry}
 import scala.concurrent.{duration, Await, Promise}, duration._
 import cats.std.option._
@@ -11,6 +12,7 @@ import cats.syntax.cartesian._
 /**
  * The endpoint manager at the gateway side that monitors
  * the registry and update the http request router
+ *
  * @param registry
  * @param endpointsRouter
  */
@@ -18,6 +20,9 @@ class EndpointsRouterUpdater(
     registry: EndpointsRegistry,
     endpointsRouter: ActorRef,
     bridgeProps: HandlerBridgeProps
+)(
+    implicit
+    interpreter: Interpreter
 ) extends Actor with ActorLogging {
   import registry._
   import EndpointsRouterUpdater.{sortOutEndpoints, SortResult}
@@ -70,6 +75,9 @@ object EndpointsRouterUpdater {
     registry: EndpointsRegistry,
     router: ActorRef,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
+  )(
+    implicit
+    interpreter: Interpreter
   ) = Props(new EndpointsRouterUpdater(registry, router, bridgeProps))
 
   private[gateway] def sortOutEndpoints(existing: List[Endpoint], toUpdate: List[EndpointDefinition]): SortResult = {

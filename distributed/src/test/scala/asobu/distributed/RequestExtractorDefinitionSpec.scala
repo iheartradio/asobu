@@ -13,7 +13,7 @@ class RequestExtractorDefinitionSpec extends Specification {
   "can compose" >> { implicit ev: ExecutionEnv ⇒
     import asobu.dsl.DefaultExtractorImplicits._
     val re = compose(a = (header[String]("big"): RequestExtractorDefinition[String]))
-    val extractor = re.apply(ev.executionContext)
+    val extractor = re.apply(null)
 
     val result = extractor.run(FakeRequest().withHeaders("big" → "lala"))
 
