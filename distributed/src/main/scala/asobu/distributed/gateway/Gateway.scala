@@ -1,38 +1,32 @@
 package asobu.distributed.gateway
 
-import javax.inject.{Provider, Inject, Singleton}
-
-import akka.actor.{Deploy, ActorRef, ActorSystem, Props}
-
-import akka.routing.{SmallestMailboxPool, DefaultOptimalSizeExploringResizer, RoundRobinPool}
 import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed._
-import play.api.{Configuration, Environment}
-import play.api.inject.{Binding, Module}
-
+import play.api.inject.Binding
 import scala.reflect.ClassTag
+import javax.inject.{Inject, Singleton}
+import akka.actor.ActorSystem
+import asobu.distributed.{DefaultEndpointsRegistry, SystemValidator}
+import play.api.{Configuration, Environment}
+import play.api.inject.Module
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class Gateway @Inject() (implicit system: ActorSystem, handlerBridgeProps: HandlerBridgeProps, interpreter: Interpreter) {
+class Gateway @Inject() (
+    handlerBridgeProps: HandlerBridgeProps,
+    system: ActorSystem,
+    endpointsRouter: EndpointsRouter
+)(implicit ec: ExecutionContext, interpreter: Interpreter) {
 
-  val validatorResult = SystemValidator.validate
+  val validatorResult = SystemValidator.validate(system)
   assert(validatorResult.isRight, validatorResult.left.get)
 
-  val entryActor: ActorRef = {
-    val routerProps =
-      SmallestMailboxPool(
-        8,
-        Some(DefaultOptimalSizeExploringResizer(upperBound = 200))
-      ).props(EndpointsRouter.props)
-    system.actorOf(routerProps, "asobu-gateway-router")
-  }
-
-  private val registry: DefaultEndpointsRegistry = DefaultEndpointsRegistry()
+  private val registry: DefaultEndpointsRegistry = DefaultEndpointsRegistry(system)
 
   system.actorOf(
     EndpointsRouterUpdater.props(
       registry,
-      entryActor,
+      endpointsRouter,
       handlerBridgeProps
     ), "asobu-gateway-routers-updater"
   )

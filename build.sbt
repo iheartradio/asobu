@@ -37,7 +37,9 @@ lazy val distributed = Project("asobu-distributed", file("distributed"))
       Format.settings ++
       Testing.settings: _*)
   .settings(
-    libraryDependencies ++= Dependencies.akka
+    libraryDependencies ++= Dependencies.akka ++ Seq(
+      "com.typesafe.akka" %% "akka-agent" % Dependencies.Versions.akka
+    )
   )
 
 lazy val distributedKanaloa = Project("asobu-distributed-kanaloa", file("distributed-kanaloa"))

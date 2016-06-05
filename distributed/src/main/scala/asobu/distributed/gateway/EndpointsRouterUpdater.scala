@@ -5,29 +5,30 @@ import akka.cluster.ddata.LWWMap
 import akka.cluster.ddata.Replicator._
 import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.{EndpointDefinition, EndpointsRegistry}
-import scala.concurrent.{duration, Await, Promise}, duration._
+
+import scala.concurrent.duration._
 import cats.std.option._
 import cats.syntax.cartesian._
+
+import scala.concurrent.ExecutionContext
 
 /**
  * The endpoint manager at the gateway side that monitors
  * the registry and update the http request router
  *
  * @param registry
- * @param endpointsRouter
+ * @param ec This is the execution context that all requests will be run on
  */
 class EndpointsRouterUpdater(
     registry: EndpointsRegistry,
-    endpointsRouter: ActorRef,
-    bridgeProps: HandlerBridgeProps
-)(
-    implicit
-    interpreter: Interpreter
-) extends Actor with ActorLogging {
+    endpointsRouter: EndpointsRouter,
+    bridgeProps: HandlerBridgeProps,
+    readTimeout: FiniteDuration = 30.seconds
+)(implicit ec: ExecutionContext, interpreter: Interpreter) extends Actor with ActorLogging {
   import registry._
   import EndpointsRouterUpdater.{sortOutEndpoints, SortResult}
   replicator ! Subscribe(EndpointsDataKey, self)
-  replicator ! Get(EndpointsDataKey, ReadMajority(30.seconds)) //todo: hardcoded timeout here
+  replicator ! Get(EndpointsDataKey, ReadMajority(readTimeout))
 
   def receive = monitoring(Nil)
 
@@ -37,15 +38,15 @@ class EndpointsRouterUpdater(
 
       val SortResult(toAdd, toPurge, toKeep) = sortOutEndpoints(endpoints, newDefs)
 
-      if (!toPurge.isEmpty || !toAdd.isEmpty) {
-        import context.dispatcher
+      if (toPurge.nonEmpty || toAdd.nonEmpty) {
         val updatedEndpoints = toKeep ++ toAdd.map(Endpoint(_, bridgeProps))
 
-        endpointsRouter ! EndpointsRouter.Update(updatedEndpoints)
+        endpointsRouter.update(updatedEndpoints)
 
-        toPurge.foreach(_.shutdown()) //todo: only purge before all endpoints are updated at all endpointsRouters, this could be challenging because the number of endpointRouters are dynamic.
+        //TODO: only purge before all endpoints are updated at all endpointsRouters, this could be challenging because the number of endpointRouters are dynamic.
+        toPurge.foreach(_.shutdown())
 
-        log.info("Endpoints updated, removed: " + toPurge.map(_.definition.id).mkString + " added: " + toAdd.map(_.id).mkString)
+        log.info("Endpoints updated, removed: " + toPurge.map(_.definition.id).mkString(" ") + " added: " + toAdd.map(_.id).mkString(" "))
         context become monitoring(updatedEndpoints)
       }
 
@@ -73,12 +74,10 @@ class EndpointsRouterUpdater(
 object EndpointsRouterUpdater {
   def props(
     registry: EndpointsRegistry,
-    router: ActorRef,
+    endpointsRouter: EndpointsRouter,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-  )(
-    implicit
-    interpreter: Interpreter
-  ) = Props(new EndpointsRouterUpdater(registry, router, bridgeProps))
+  )(implicit ec: ExecutionContext, interpreter: Interpreter) =
+    Props(new EndpointsRouterUpdater(registry, endpointsRouter, bridgeProps))
 
   private[gateway] def sortOutEndpoints(existing: List[Endpoint], toUpdate: List[EndpointDefinition]): SortResult = {
     val (toKeep, toPurge) = existing.partition { ep ⇒

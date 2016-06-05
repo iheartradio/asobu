@@ -8,7 +8,7 @@ import asobu.distributed.gateway.AbstractKanaloaBridge
 import kanaloa.reactive.dispatcher._
 import play.api.Configuration
 
-class KanaloaBridge @Inject() (implicit config: Configuration, system: ActorSystem) extends AbstractKanaloaBridge {
+class KanaloaBridge @Inject() (config: Configuration, system: ActorSystem) extends AbstractKanaloaBridge {
 
   override protected def resultChecker: ResultChecker = {
     case e: ErrorResult[_] ⇒ Left(e.toString)

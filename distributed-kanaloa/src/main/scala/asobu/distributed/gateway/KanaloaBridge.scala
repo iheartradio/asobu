@@ -2,8 +2,7 @@ package asobu.distributed.gateway
 
 import akka.actor.{Props, ActorSystem}
 import asobu.distributed.gateway.HandlerBridgeProps.{Role, ActorPathString}
-import kanaloa.reactive.dispatcher.Backend.BackendAdaptor
-import kanaloa.reactive.dispatcher.{ResultChecker, Backend, PushingDispatcher}
+import kanaloa.reactive.dispatcher.{ResultChecker, PushingDispatcher}
 import play.api.Configuration
 
 abstract class AbstractKanaloaBridge(implicit config: Configuration, system: ActorSystem)

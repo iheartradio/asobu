@@ -31,7 +31,6 @@ trait EndpointHandler {
  * @param definition of the endpoint provided by the service side
  * @param bridgeProps a factory that creates the prop for an bridge actor between
  *                    gateway router and actual handling service actor
- * @param arf
  */
 case class Endpoint(
     definition: EndpointDefinition,

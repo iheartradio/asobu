@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import scala.collection.JavaConverters._
 
 object SystemValidator {
-  def validate(implicit system: ActorSystem): Either[String, Unit] = {
+  def validate(system: ActorSystem): Either[String, Unit] = {
     val cfg = system.settings.config
     val rolePath = "akka.cluster.distributed-data.role"
     if (!cfg.hasPath(rolePath))

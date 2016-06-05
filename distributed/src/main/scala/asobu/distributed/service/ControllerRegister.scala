@@ -2,23 +2,22 @@ package asobu.distributed.service
 
 import akka.ConfigurationException
 import akka.actor.ActorSystem
-import akka.cluster.Cluster
 import akka.util.Timeout
-import asobu.distributed.{SystemValidator, EndpointDefinition, DefaultEndpointsRegistry, EndpointsRegistry}
+import asobu.distributed.{DefaultEndpointsRegistry, EndpointDefinition, EndpointsRegistry, SystemValidator}
 import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service._
 import play.api.libs.json.JsObject
 import play.routes.compiler.{HandlerCall, Route}
-
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ControllerRegister {
 
   type ApiDocGenerator = (Prefix, Seq[Route]) ⇒ Option[JsObject]
   val voidApiDocGenerator: ApiDocGenerator = (_, _) ⇒ None
 
+  //TODO: don't have implicits for all these arguments
   def init(prefix: Prefix)(controllers: Controller*)(
     implicit
+    ec: ExecutionContext,
     system: ActorSystem,
     ao: Timeout,
     buildNumber: Option[BuildNumber] = None,
@@ -36,14 +35,13 @@ trait ControllerRegister {
    */
   def init(controllers: (Prefix, List[Controller])*)(
     implicit
+    ec: ExecutionContext,
     system: ActorSystem,
     ao: Timeout,
     buildNumber: Option[BuildNumber],
     apiDocGenerator: ApiDocGenerator
   ): Future[List[EndpointDefinition]] = {
-
-    import system.dispatcher
-    val registry: EndpointsRegistry = DefaultEndpointsRegistry()
+    val registry: EndpointsRegistry = DefaultEndpointsRegistry(system)
     val rec: EndpointsRegistryClient = EndpointsRegistryClientImp(registry, buildNumber)
     val version = buildNumber.map(_.buildInfoBuildNumber)
 
@@ -67,7 +65,7 @@ trait ControllerRegister {
 
     }
 
-    SystemValidator.validate match {
+    SystemValidator.validate(system) match {
       case Left(error) ⇒ Future.failed(new ConfigurationException(error))
       case _ ⇒
         Future.sequence(controllers.flatMap {

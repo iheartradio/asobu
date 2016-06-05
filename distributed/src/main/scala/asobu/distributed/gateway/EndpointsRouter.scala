@@ -1,43 +1,41 @@
 package asobu.distributed.gateway
 
-import akka.actor.{Props, Actor}
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.gateway.EndpointsRouter.Update
-import play.api.mvc.RequestHeader
+import akka.agent.Agent
+import play.api.mvc.{RequestHeader, Result}
 import play.api.mvc.Results.NotFound
+import scala.concurrent.{Future, ExecutionContext}
+
+object EndpointsRouter {
+  def apply()(implicit ex: ExecutionContext) = new EndpointsRouter()
+}
 
 /**
  * Route http requests to endpoints' handler method
  */
-class EndpointsRouter extends Actor {
+class EndpointsRouter(
+    onNotFound: RequestHeader ⇒ Future[Result] = req ⇒ Future.successful(
+      NotFound(s"Action or remote endpoints not found for ${req.path}")
+    )
+)(implicit ex: ExecutionContext) {
+  type Handler = PartialFunction[RequestHeader, Future[Result]]
 
-  def receive: Receive = handling(Nil)
+  val endpointsAgent = Agent[(Handler, List[Endpoint])]((PartialFunction(onNotFound), Nil))
 
-  def handling(endpoints: List[Endpoint]): Receive = {
-    def toPartial(endpoint: Endpoint): Receive = {
-      case req @ endpoint(requestParams) ⇒
-        val rf = endpoint.handle(requestParams, req)
-        import context.dispatcher
-        val replyTo = sender
-        rf.foreach(replyTo ! _)
+  def update(endpoints: List[Endpoint]) = {
+    def toPartial(endpoint: Endpoint): Handler = {
+      case req @ endpoint(requestParams) ⇒ endpoint.handle(requestParams, req)
     }
 
-    val endpointsHandlerPartial = //todo: improve performance by doing a prefix search first
-      endpoints.map(toPartial).foldLeft(PartialFunction.empty: Receive)(_ orElse _)
+    //todo: improve performance by doing a prefix search first
+    val endpointsHandlerPartial = (endpoints.map(toPartial) :+ PartialFunction(onNotFound))
+      .reduce(_ orElse _)
 
-    ({
-      case Update(eps) ⇒
-        context become handling(eps)
-    }: Receive) orElse endpointsHandlerPartial orElse {
-      case req: RequestHeader ⇒
-        sender ! NotFound(s"Action or remote endpoints not found for ${req.path}")
-    }
+    endpointsAgent.alter((endpointsHandlerPartial, endpoints))
   }
 
+  def handle(req: RequestHeader) = {
+    val (handler, _) = endpointsAgent.get()
+    handler(req)
+  }
 }
 
-object EndpointsRouter {
-
-  def props = Props(new EndpointsRouter)
-  case class Update(endpoints: List[Endpoint])
-}

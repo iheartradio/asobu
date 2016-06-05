@@ -30,7 +30,7 @@ object EndpointsRegistry {
   val EndpointsDocsKey = LWWMapKey[DocDataType]("endpoints-registry-apidocs")
 }
 
-case class DefaultEndpointsRegistry(implicit system: ActorSystem) extends EndpointsRegistry {
+case class DefaultEndpointsRegistry(system: ActorSystem) extends EndpointsRegistry {
   val timeout = 30.seconds
 
   val writeConsistency = WriteAll(timeout)

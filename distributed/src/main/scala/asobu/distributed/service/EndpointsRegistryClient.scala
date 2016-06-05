@@ -1,15 +1,13 @@
 package asobu.distributed.service
 
 import java.net.URLEncoder
-
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import asobu.distributed.EndpointsRegistryUpdater.Add
 import asobu.distributed._
 import asobu.distributed.gateway.Endpoint.Prefix
-
-import scala.concurrent.Future
+import scala.concurrent.{Future, ExecutionContext}
 
 trait EndpointsRegistryClient {
   def add(endpointDefinition: EndpointDefinition): Future[Unit]
@@ -26,10 +24,10 @@ case class EndpointsRegistryClientImp(
     buildNumber: Option[BuildNumber] = None
 )(
     implicit
+    ec: ExecutionContext,
     system: ActorSystem,
     ao: Timeout
 ) extends EndpointsRegistryClient {
-  import system.dispatcher
 
   val clientActor = system.actorOf(EndpointsRegistryUpdater.props(registry), "asobu-endpoint-registry-client")
 

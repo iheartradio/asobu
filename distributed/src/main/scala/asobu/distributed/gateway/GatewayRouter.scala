@@ -14,14 +14,12 @@ import scala.concurrent.ExecutionContext
 
 /**
  * Proxy router for play
- *
- * @param gateway
  */
-class GatewayRouter @Inject() (implicit gateway: Gateway, ec: ExecutionContext) extends Router {
+class GatewayRouter @Inject() (endpointsRouter: EndpointsRouter)(implicit ec: ExecutionContext) extends Router {
   implicit val ao: Timeout = 30.seconds //todo: make this configurable
 
   val handleAll = Action.async { implicit req ⇒
-    (gateway.entryActor ? req).collect {
+    endpointsRouter.handle(req).collect {
       case r: Result ⇒ r
       case _         ⇒ InternalServerError("non-result returned by gateway")
     }
