@@ -13,7 +13,7 @@ sealed trait Read[T] extends Serializable {
 trait ReadInstances {
   type ParseResult[T] = Try[T]
 
-  def apply[T](f: String ⇒ T) = new Read[T] {
+  def apply[T](f: String ⇒ T): Read[T] = new Read[T] {
     def parse(str: String): Try[T] = Try(f(str))
   }
 

@@ -59,12 +59,12 @@ trait RequestExtractorDefinitionFunctions extends PredefinedDefs {
         Applicative[RequestExtractor]
       }
 
-      def ap[A, B](ff: RequestExtractorDefinition[(A) ⇒ B])(fa: RequestExtractorDefinition[A]) =
+      def ap[A, B](ff: RequestExtractorDefinition[(A) ⇒ B])(fa: RequestExtractorDefinition[A]): RequestExtractorDefinition[B] =
         new RequestExtractorDefinition[B] {
           def apply(interpreter: Interpreter)(implicit ec: ExecutionContext) = appR.ap(ff(interpreter))(fa(interpreter))
         }
 
-      def pure[A](x: A) = new RequestExtractorDefinition[A] {
+      def pure[A](x: A): RequestExtractorDefinition[A] = new RequestExtractorDefinition[A] {
         def apply(interpreter: Interpreter)(implicit ex: ExecutionContext): RequestExtractor[A] = appR.pure(x)
       }
 

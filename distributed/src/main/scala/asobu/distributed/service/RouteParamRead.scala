@@ -17,9 +17,9 @@ trait RouteParamRead[V] extends Serializable {
 //This whole thing is needed because PathBindable and QueryStringBindable isn't serializable
 object RouteParamRead {
 
-  def apply[V](implicit rpe: RouteParamRead[V]) = rpe
+  def apply[V](implicit rpe: RouteParamRead[V]): RouteParamRead[V] = rpe
 
-  def mk[V](f: ⇒ (String, RouteParams) ⇒ Xor[String, V]) = new RouteParamRead[V] {
+  def mk[V](f: ⇒ (String, RouteParams) ⇒ Xor[String, V]): RouteParamRead[V] = new RouteParamRead[V] {
     def apply(field: String, params: RouteParams): Xor[String, V] = {
       f(field, params)
     }
