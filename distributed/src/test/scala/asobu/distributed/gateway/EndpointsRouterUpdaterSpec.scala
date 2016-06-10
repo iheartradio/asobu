@@ -1,40 +1,44 @@
 package asobu.distributed.gateway
 
-import akka.actor.{ActorRef, ActorSystem}
-import asobu.distributed.{util, EndpointDefinition, EndpointDefImpl}
+import java.io.InvalidClassException
+
+import akka.actor.{ActorRef, ExtendedActorSystem, UnhandledMessage}
+import asobu.distributed._
 import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service.RemoteExtractorDef
-import asobu.distributed.util.{SpecWithActorCluster, MockRoute}
-import org.specs2.mutable.Specification
-import org.specs2.specification.AfterAll
+import asobu.distributed.util.{MockRoute, SpecWithActorCluster}
 import akka.actor.ActorDSL._
+import akka.cluster.Cluster
+import akka.cluster.ddata.LWWMap
+import akka.cluster.ddata.Replicator.{Changed, GetSuccess}
+import akka.serialization.{JavaSerializer, Serializer}
+import akka.testkit.TestProbe
 import util.implicits._
 
 class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  def mockEndpointDef(
+    version: Option[Int],
+    verb: String = "GET",
+    pathParts: List[String] = Nil
+  ): EndpointDefinition = {
+    val handler: ActorRef = actor(new Act {
+      become { case _ ⇒ }
+    })
+    EndpointDefImpl(Prefix("/"), MockRoute(verb = verb, pathParts = pathParts), null, handler.path, "test", version)
+  }
+
   "sortOutEndpoints" >> {
     import EndpointsRouterUpdater.sortOutEndpoints
 
-    def mockEndpoingDef(
-      version: Option[Int],
-      verb: String = "GET",
-      pathParts: List[String] = Nil
-    ): EndpointDefinition = {
-
-      val handler: ActorRef = actor(new Act {
-        become { case _ ⇒ }
-      })
-      EndpointDefImpl(Prefix("/"), MockRoute(verb = verb, pathParts = pathParts), null, handler.path, "test", version)
-    }
-
     "Keep endpoints that remains the same version" >> {
-      val e1 = Endpoint(mockEndpoingDef(Some(1), pathParts = List("abc", "def")))
-      val e2 = Endpoint(mockEndpoingDef(Some(3), pathParts = List("qpbg")))
+      val e1 = Endpoint(mockEndpointDef(Some(1), pathParts = List("abc", "def")))
+      val e2 = Endpoint(mockEndpointDef(Some(3), pathParts = List("qpbg")))
 
       val existing = List(e1, e2)
       val toUpdate = List(
-        mockEndpoingDef(Some(1), pathParts = List("abc", "def")),
-        mockEndpoingDef(Some(3), pathParts = List("qpbg"))
+        mockEndpointDef(Some(1), pathParts = List("abc", "def")),
+        mockEndpointDef(Some(3), pathParts = List("qpbg"))
       )
 
       val r = sortOutEndpoints(existing, toUpdate)
@@ -46,11 +50,11 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
     }
 
     "update endpoints that with different version" >> {
-      val e1 = Endpoint(mockEndpoingDef(Some(1), pathParts = List("abc", "def")))
-      val e2 = Endpoint(mockEndpoingDef(Some(3), pathParts = List("qpbg")))
+      val e1 = Endpoint(mockEndpointDef(Some(1), pathParts = List("abc", "def")))
+      val e2 = Endpoint(mockEndpointDef(Some(3), pathParts = List("qpbg")))
 
       val existing = List(e1, e2)
-      val newEndpointDef = mockEndpoingDef(Some(3), pathParts = List("abc", "def"))
+      val newEndpointDef = mockEndpointDef(Some(3), pathParts = List("abc", "def"))
 
       val toUpdate = List(
         newEndpointDef,
@@ -66,11 +70,11 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
     }
 
     "update endpoint without old version" >> {
-      val e1 = Endpoint(mockEndpoingDef(None, pathParts = List("abc", "def")))
-      val e2 = Endpoint(mockEndpoingDef(Some(3), pathParts = List("qpbg")))
+      val e1 = Endpoint(mockEndpointDef(None, pathParts = List("abc", "def")))
+      val e2 = Endpoint(mockEndpointDef(Some(3), pathParts = List("qpbg")))
 
       val existing = List(e1, e2)
-      val newEndpointDef = mockEndpoingDef(Some(3), pathParts = List("abc", "def"))
+      val newEndpointDef = mockEndpointDef(Some(3), pathParts = List("abc", "def"))
       val toUpdate = List(
         newEndpointDef,
         e2.definition
@@ -85,11 +89,11 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
     }
 
     "update endpoint without new version" >> {
-      val e1 = Endpoint(mockEndpoingDef(Some(3), pathParts = List("abc", "def")))
-      val e2 = Endpoint(mockEndpoingDef(Some(3), pathParts = List("qpbg")))
+      val e1 = Endpoint(mockEndpointDef(Some(3), pathParts = List("abc", "def")))
+      val e2 = Endpoint(mockEndpointDef(Some(3), pathParts = List("qpbg")))
 
       val existing = List(e1, e2)
-      val newEndpointDef = mockEndpoingDef(None, pathParts = List("abc", "def"))
+      val newEndpointDef = mockEndpointDef(None, pathParts = List("abc", "def"))
       val toUpdate = List(
         newEndpointDef,
         e2.definition
@@ -104,14 +108,14 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
     }
 
     "update endpoints that with different path" >> {
-      val e1 = Endpoint(mockEndpoingDef(Some(3), pathParts = List("abc", "def")))
-      val e2 = Endpoint(mockEndpoingDef(Some(1), pathParts = List("different")))
+      val e1 = Endpoint(mockEndpointDef(Some(3), pathParts = List("abc", "def")))
+      val e2 = Endpoint(mockEndpointDef(Some(1), pathParts = List("different")))
 
-      val newEf2 = mockEndpoingDef(Some(1), pathParts = List("qpbg"))
+      val newEf2 = mockEndpointDef(Some(1), pathParts = List("qpbg"))
 
       val existing = List(e1, e2)
       val toUpdate = List(
-        mockEndpoingDef(Some(3), pathParts = List("abc", "def")),
+        mockEndpointDef(Some(3), pathParts = List("abc", "def")),
         newEf2
       )
 
@@ -125,8 +129,8 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
 
     "add all new endpoints" >> {
 
-      val newEf1 = mockEndpoingDef(Some(3), pathParts = List("abc", "def"))
-      val newEf2 = mockEndpoingDef(Some(1), pathParts = List("qpbg"))
+      val newEf1 = mockEndpointDef(Some(3), pathParts = List("abc", "def"))
+      val newEf2 = mockEndpointDef(Some(1), pathParts = List("qpbg"))
 
       val r = sortOutEndpoints(Nil, List(newEf1, newEf2))
 
@@ -138,4 +142,31 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
 
   }
 
+  "ignore unknown message types" >> {
+    val listener = TestProbe()
+    system.eventStream.subscribe(listener.ref, classOf[UnhandledMessage])
+
+    val registry = new DefaultEndpointsRegistry(system)
+    val updater = system.actorOf(EndpointsRouterUpdater.props(
+      registry,
+      new EndpointsRouter()
+    ))
+
+    implicit val cluster = Cluster(system)
+
+    val data = (LWWMap.empty[String] + "dummy-key" → "dummy-value")
+      .asInstanceOf[LWWMap[EndpointDefinition]]
+
+    def check[A](message: A) = {
+      val test = TestProbe()
+      test.send(updater, message)
+      val unhandled = UnhandledMessage(message, test.ref, updater)
+      listener.expectMsg(unhandled) === unhandled
+    }
+
+    check(GetSuccess(registry.EndpointsDataKey, None)(data))
+    check(Changed(registry.EndpointsDataKey)(data))
+  }
+
 }
+
