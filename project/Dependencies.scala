@@ -12,7 +12,8 @@ object Dependencies {
     Resolver.sonatypeRepo("releases"),
     Resolver.sonatypeRepo("snapshots"),
     Resolver.bintrayRepo("scalaz", "releases"),
-    Resolver.bintrayRepo("kailuowang", "maven")
+    Resolver.bintrayRepo("kailuowang", "maven"),
+    Resolver.bintrayRepo("iheartradio", "maven")
   )
 
 
@@ -43,7 +44,7 @@ object Dependencies {
   )
 
   val kanaloa = Seq(
-    "com.iheart" %% "kanaloa" % "0.3.0"
+    "com.iheart" %% "kanaloa-cluster" % "0.4.0-RC2"
   )
 
   val test = Seq(
