@@ -5,7 +5,7 @@ object Dependencies {
   object Versions {
     val play = "2.4.6"
     val specs2 = "3.6.6"
-    val akka = "2.4.2"
+    val akka = "2.4.8"
   }
 
   val resolverSetting = resolvers ++= Seq(
@@ -44,7 +44,7 @@ object Dependencies {
   )
 
   val kanaloa = Seq(
-    "com.iheart" %% "kanaloa-cluster" % "0.4.0-RC5"
+    "com.iheart" %% "kanaloa-cluster" % "0.4.0-RC6"
   )
 
   val test = Seq(

@@ -9,11 +9,13 @@ Building a play frontend for an akka cluster. The frontend provides
 Run each line in a new terminal.
 
 ```
-sbt "backend/run 2551"
 sbt "project frontend" run
+sbt "backend/run"
 ```
 
 goto
+
+http://localhost:9000/docs/swagger-ui/index.html?url=/docs/swagger.json#/
 
 http://localhost:9000/api/normal/factorialOf/5
 
