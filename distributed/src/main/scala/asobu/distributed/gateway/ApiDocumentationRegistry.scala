@@ -1,6 +1,6 @@
 package asobu.distributed.gateway
 
-import akka.actor.{Props, ActorLogging, Actor, ActorRef}
+import akka.actor._
 import akka.cluster.ddata.Replicator._
 import asobu.distributed.EndpointsRegistry
 import asobu.distributed.gateway.ApiDocumentationRegistry.Retrieve

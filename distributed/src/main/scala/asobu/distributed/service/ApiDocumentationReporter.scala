@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import akka.util.Timeout
 import asobu.distributed.EndpointsRegistryUpdater.{Added, AddDoc}
 import asobu.distributed.{EndpointsRegistryUpdater, EndpointsRegistry}
-import play.api.libs.json.JsObject
+import play.api.libs.json.{Json, JsObject}
 import play.routes.compiler.Route
 import akka.pattern.ask
 import scala.concurrent.{Future, ExecutionContext}
@@ -22,14 +22,14 @@ case class ApiDocumentationReporter(registry: EndpointsRegistry)(
 
   lazy val roleO = Cluster(system).selfRoles.headOption
 
-  def report(controllers: Seq[Controller])(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
+  def report(controllers: Seq[Controller])(implicit ec: ExecutionContext): Future[Option[String]] = {
     val allRoutes = controllers.flatMap(_.routes)
     val addO = for {
       role ← roleO
       doc ← generator(allRoutes)
-    } yield AddDoc(role, doc)
+    } yield AddDoc(role, Json.stringify(doc))
 
-    addO.fold[Future[Option[JsObject]]](Future.successful(None)) { add ⇒
+    addO.fold[Future[Option[String]]](Future.successful(None)) { add ⇒
       (clientActor ? add) collect {
         case Added(_) ⇒ addO.map(_.doc)
       }

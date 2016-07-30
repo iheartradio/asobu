@@ -54,7 +54,7 @@ class EndpointsRegistryUpdater(registry: EndpointsRegistry) extends Actor with A
 
     case AddDoc(role, doc) ⇒
       log.info(s"Registering Api Documentation for $role")
-      updateDoc(Added(sender))(_ + (role → Json.stringify(doc)))
+      updateDoc(Added(sender))(_ + (role → doc))
 
     case Remove(role) ⇒
       removeEndpoint(sender) { endpointDef ⇒
@@ -115,7 +115,7 @@ object EndpointsRegistryUpdater {
 
   case class Add(endpointDef: EndpointDefinition) extends UpdateRequest
 
-  case class AddDoc(role: String, doc: JsObject)
+  case class AddDoc(role: String, doc: String)
 
   case class Remove(role: String) extends UpdateRequest
 
