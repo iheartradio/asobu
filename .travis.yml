@@ -14,6 +14,7 @@ cache:
 
 script:
   - sbt clean coverage test
+  - cd example && sbt clean test
 
 after_success:
   - sbt coverageReport coverageAggregate codacyCoverage

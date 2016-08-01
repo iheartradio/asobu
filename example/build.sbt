@@ -1,4 +1,6 @@
 import NativePackagerHelper._
+import com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit
+
 
 val resolverSetting = resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
@@ -15,11 +17,12 @@ val commonSettings = Seq(
 
   // build info
   buildInfoPackage := "meta",
-  buildInfoOptions ++= Seq(BuildInfoOption.ToJson,
-                          BuildInfoOption.Traits("asobu.distributed.service.BuildNumber")),
+  buildInfoOptions ++= Seq(BuildInfoOption.ToJson),
   buildInfoKeys := Seq[BuildInfoKey](
-    name, version, scalaVersion, buildInfoBuildNumber
-  ),
+    name, version, scalaVersion
+  )++ gitHeadCommit.value.map {
+    value ⇒ BuildInfoKey("gitCommit" → value)
+  }.toSeq,
   resolverSetting
 )
 

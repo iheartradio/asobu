@@ -52,7 +52,9 @@ object Backend extends App {
     Some(doc)
   }
 
-  implicit val bi: BuildNumber = BuildInfo
+  implicit val bi: BuildNumber = new BuildNumber {
+    override def buildInfoBuildNumber: Int = BuildInfo.gitCommit.hashCode
+  }
 
   import system.dispatcher
 

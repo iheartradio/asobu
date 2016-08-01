@@ -9,7 +9,7 @@ import asobu.distributed.service.Action.DistributedRequest
 import asobu.distributed.service.ActionExtractorSpec._
 import asobu.distributed.{EndpointDefinition, PredefinedDefs, util}
 import asobu.distributed.util.{MockRoute, ScopeWithActor, SerializableTest, SpecWithActorCluster}
-import asobu.dsl.ExtractResult
+
 import asobu.dsl.extractors.JsonBodyExtractor
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
@@ -17,21 +17,18 @@ import org.specs2.specification.mutable.ExecutionEnvironment
 import play.api.libs.json.{JsNumber, JsString, Json}
 import play.api.mvc.Results.Ok
 import play.core.routing.RouteParams
-import play.routes.compiler.{HandlerCall, HttpVerb, PathPattern, Route}
-import shapeless._
 import shapeless.record.Record
 
-import concurrent.duration._
 import scala.concurrent.Future
 import play.api.test.FakeRequest
 import cats.std.future._
 import util.implicits._
+import concurrent.duration._
 
 class SyntaxSpec extends SpecWithActorCluster with SerializableTest with ExecutionEnvironment {
   import asobu.distributed.service.SyntaxSpec._
   implicit val format = Json.format[Input]
   import asobu.dsl.DefaultExtractorImplicits._
-
   implicit val erc: EndpointsRegistryClient = new EndpointsRegistryClient {
     def add(endpointDefinition: EndpointDefinition): Future[Unit] = Future.successful(())
 
@@ -92,14 +89,14 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
       val remoteResult = endpoint.remoteExtractor(nullInterpreter).run((params, req)).toEither
 
-      remoteResult must beRight(expectedExtracted: Any).await
+      remoteResult must beRight(expectedExtracted: Any).await(retries = 0, timeout = 3.seconds)
 
       val distributedRequest = DistributedRequest(expectedExtracted, req.body)
 
       import scala.concurrent.ExecutionContext.Implicits.global
       val localResult = action.extractors.localExtract(distributedRequest).toEither
 
-      localResult must beRight(LargeInput(a = "avalue", b = 10, flagInHeader = true)).await
+      localResult must beRight(LargeInput(a = "avalue", b = 10, flagInHeader = true)).await(retries = 0, timeout = 3.seconds)
 
     }
   }
