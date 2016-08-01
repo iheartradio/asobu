@@ -2,6 +2,7 @@ package asobu.distributed
 
 import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import akka.actor.{ActorRef, ActorRefFactory, ActorSystem}
+import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.{DefaultHandlerBridgeProps, EndpointsRouter, Gateway, GatewayRouter}
@@ -102,7 +103,7 @@ object End2EndSpec {
       }
 
       //The routes file is in resources/TestController.routes
-      case class TestController(serviceBackend: ActorRef) extends DistributedController {
+      case class TestController(serviceBackend: ActorRef)(implicit mat: ActorMaterializer) extends DistributedController {
         import Domain._
         implicit val catFormat = Json.format[Cat]
         implicit val dogFormat = Json.format[Dog]
@@ -132,6 +133,7 @@ object End2EndSpec {
       }
 
       case class App()(implicit system: ActorSystem) {
+        implicit val mat = ActorMaterializer()
         val started = init(Prefix("/api"))(
           TestController(testServiceBackendRef(system))
         )

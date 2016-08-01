@@ -15,15 +15,16 @@ import play.api.libs.json.{Format, Json}
 import play.api.mvc.Results._
 import concurrent.duration._
 import api.authentication.Authenticated
+import akka.stream.Materializer
 
 //todo: this example includes endpoints irrelevant to each other. Improve by breaking it up.
-case class AMixedController(factorialBackend: ActorRef, studentBackend: ActorRef) extends DistributedController {
+case class AMixedController(factorialBackend: ActorRef, studentBackend: ActorRef)(implicit mat: Materializer) extends DistributedController {
   import Formats._
 
   import concurrent.ExecutionContext.Implicits.global
   import asobu.dsl.DefaultExtractorImplicits._
-  implicit val ao : Timeout = 30.seconds
 
+  implicit val ao : Timeout = 30.seconds
 
   val actions = List(
     handle("ep1",

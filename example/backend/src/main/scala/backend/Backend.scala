@@ -17,6 +17,7 @@ import play.routes.compiler.Route
 import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap
 import concurrent.duration._
+import akka.stream.ActorMaterializer
 
 /**
  * Booting a cluster backend node with all actors
@@ -34,7 +35,7 @@ object Backend extends App {
   val properties = Map(
       "akka.remote.netty.tcp.port" -> port
   )
-  
+
   implicit val system: ActorSystem = ActorSystem("application", (ConfigFactory parseMap properties)
     .withFallback(ConfigFactory.load())
   )
@@ -54,6 +55,9 @@ object Backend extends App {
   implicit val bi: BuildNumber = BuildInfo
 
   import system.dispatcher
+
+  implicit val mat = ActorMaterializer()(system)
+
   init(Prefix("/api"))(
     AMixedController(factorialBE, studentService)
   ).onFailure {

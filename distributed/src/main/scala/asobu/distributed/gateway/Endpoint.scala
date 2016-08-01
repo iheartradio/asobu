@@ -54,7 +54,19 @@ case class Endpoint(
 
   def shutdown(): Unit = if (handlerRef != handlerActor) handlerRef ! PoisonPill
 
-  def unapply(request: Request[AnyContent]): Option[RouteParams] = routeExtractors.unapply(request)
+  def unapply(request: Request[AnyContent]): Option[RouteParams] = {
+    // queryString's parser parses an empty string as Map("" -> Seq()), so we replace query strings made up of all empty values
+    // with an empty map
+    // https://github.com/playframework/playframework/blob/master/framework/src/play/src/main/scala/play/core/parsers/FormUrlEncodedParser.scala#L23
+    routeExtractors.unapply(request).map { params ⇒
+      if (params.queryString.forall {
+        case (key, values) ⇒
+          key.trim.isEmpty && values.forall(_.trim.isEmpty)
+      }) {
+        params.copy(queryString = Map.empty)
+      } else params
+    }
+  }
 
   //todo: think of a way to get rid of the ask below, e.g. create an new one-time actor for handling (just like ask),
   // or have distributed request have the reply to Address and then send it to handlerRef as the implicit sender.
@@ -70,8 +82,8 @@ case class Endpoint(
     }
     val message = extractor.run((routeParams, request))
     message.fold[Future[Result]](
-      Future.successful(_),
-      (t: T) ⇒ handleMessageWithBackend(t)
+      Future.successful,
+      handleMessageWithBackend
     ).flatMap(identity)
   }
 
@@ -82,7 +94,7 @@ case class Endpoint(
     routing.Route(routeInfo.verb.value, routing.PathPattern(toCPart(StaticPart(prefix.value) +: localParts)))
   }
 
-  implicit private def toCPart(parts: Seq[PathPart]): Seq[routing.PathPart] = parts map {
+  private def toCPart(parts: Seq[PathPart]): Seq[routing.PathPart] = parts map {
     case DynamicPart(n, c, e) ⇒ routing.DynamicPart(n, c, e)
     case StaticPart(v)        ⇒ routing.StaticPart(v)
   }

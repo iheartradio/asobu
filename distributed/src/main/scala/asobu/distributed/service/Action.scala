@@ -1,16 +1,16 @@
 package asobu.distributed.service
+
 import akka.actor._
 import akka.cluster.Cluster
-import Action.{DistributedResult, DistributedRequest, UnrecognizedMessage}
+import Action.{DistributedRequest, DistributedResult, UnrecognizedMessage}
+import akka.stream.Materializer
+import akka.util.ByteString
 import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.{Headers, EndpointDefImpl, EndpointDefinition}
-import asobu.dsl.Extractor
-import play.api.libs.iteratee.{Enumerator, Iteratee}
-import play.api.mvc.{ResponseHeader, Result, AnyContent}
+import asobu.distributed.{EndpointDefImpl, EndpointDefinition, Headers}
+import play.api.http.HttpEntity
+import play.api.mvc.{AnyContent, ResponseHeader, Result}
 import play.routes.compiler.Route
-
 import scala.concurrent.Future
-import scala.reflect.internal.util.NoPosition
 import scala.util.parsing.input.Positional
 
 trait Action {
@@ -73,18 +73,22 @@ object Action {
       body: Array[Byte] = Array.empty
   ) {
     def toResult =
-      Result(new ResponseHeader(status.code, headers.toMap), Enumerator(body))
+      Result(new ResponseHeader(status.code, headers.toMap), HttpEntity.Strict(ByteString(body), None))
   }
 
   object DistributedResult {
 
-    implicit def from(r: Result): Future[DistributedResult] = {
+    def from(result: Result)(implicit mat: Materializer): Future[DistributedResult] = {
       import scala.concurrent.ExecutionContext.Implicits.global
-      (r.body run Iteratee.getChunks) map { chunks ⇒
-        val body = chunks.toArray.flatten
-        DistributedResult(HttpStatus(r.header.status), r.header.headers.toSeq, body)
+      result.body.consumeData.map { data ⇒
+        DistributedResult(
+          HttpStatus(result.header.status),
+          result.header.headers.toSeq,
+          data.toArray[Byte]
+        )
       }
     }
+
   }
 
 }

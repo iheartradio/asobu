@@ -1,24 +1,19 @@
 package asobu.dsl
 
-import asobu.dsl
-import asobu.dsl._
 import asobu.dsl.Syntax._
 import asobu.dsl.SyntaxFacilitators._
 import asobu.dsl.extractors.HeaderExtractors
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
-import play.api.cache.CacheApi
-import play.api.http.Status._
+import org.specs2.specification.{After, Scope}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.test.{FakeRequest, PlaySpecification}
 import shapeless._
 import shapeless.syntax.singleton._
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
 
 object SyntaxSpec {
   case class RequestMsg(id: String, name: String, bar: Double)
@@ -52,7 +47,7 @@ object SyntaxSpec {
 
 case class ProcessResult(content: Option[String])
 
-class SyntaxSpec extends PlaySpecification {
+class SyntaxSpec(implicit executionEnv: ExecutionEnv) extends PlaySpecification {
   import SyntaxSpec._
   import asobu.dsl.DefaultImplicits._
   val defaultTimeout = 10.seconds
@@ -66,7 +61,7 @@ class SyntaxSpec extends PlaySpecification {
 
   "end to end syntax" >> {
 
-    "with normal extraction" >> {
+    "with normal extraction" >> new WithSystem {
 
       val controller = new Controller {
         val withExtraction = handle(
@@ -84,10 +79,9 @@ class SyntaxSpec extends PlaySpecification {
 
       val bodyText: String = contentAsString(result)
       bodyText === "myId hello! mike"
-
     }
 
-    "with body extraction" >> {
+    "with body extraction" >> new WithSystem {
 
       val controller = new Controller {
         val combined = handle(
@@ -106,7 +100,7 @@ class SyntaxSpec extends PlaySpecification {
       (respBody \ "msg").as[String] === "hello! mike"
     }
 
-    "with extraction combination" >> {
+    "with extraction combination" >> new WithSystem {
       import asobu.dsl.DefaultExtractorImplicits._
       import scala.concurrent.ExecutionContext.Implicits.global
       val controller = new Controller {
@@ -126,7 +120,7 @@ class SyntaxSpec extends PlaySpecification {
       (respBody \ "msg").as[String] === "hello! mike"
     }
 
-    "without extraction" >> {
+    "without extraction" >> new WithSystem {
       val controller = new Controller {
         val withOutExtraction = handle(
           process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok(_))
@@ -145,7 +139,8 @@ class SyntaxSpec extends PlaySpecification {
     }
 
     case class SomeOtherMessage(boo: String)
-    "failure when unexpected Message" >> { implicit ev: ExecutionEnv ⇒
+
+    "failure when unexpected Message" >> new WithSystem { //implicit ev: ExecutionEnv ⇒
       val controller = new Controller {
         val withOutExtraction = handle(
           process[RequestMsg] using actor next expect[SomeOtherMessage].respond(Ok)
@@ -164,7 +159,7 @@ class SyntaxSpec extends PlaySpecification {
 
     }
 
-    "without any fields" >> {
+    "without any fields" >> new WithSystem {
       val controller = new Controller {
         val withOutFields = handle(
           process[SpecialRequest.type] using actor next expect[ResponseMsg].respondJson(Ok(_))
@@ -182,7 +177,7 @@ class SyntaxSpec extends PlaySpecification {
 
     }
 
-    "with filter " >> { implicit ev: ExecutionEnv ⇒
+    "with filter " >> new WithSystem {
 
       val withFilter = handle(
         process[RequestMsg] using actor next expect[ResponseMsg].respond(Ok) `with` authenticated
@@ -211,8 +206,7 @@ class SyntaxSpec extends PlaySpecification {
       }
     )
 
-    "with AuthExtractor" >> { implicit ev: ExecutionEnv ⇒
-
+    "with AuthExtractor" >> new WithSystem {
       val handler = handle(
         fromAuthorized(GetSessionInfo).from(id = (_: SessionInfo).sessionId),
         process[RequestMsg] using actor next expect[ResponseMsg].respondJson(Ok)
@@ -241,19 +235,19 @@ class SyntaxSpec extends PlaySpecification {
 
       val dir: Directive[ProcessResult] = expect[ProcessResult].respondJson(Ok(_)).ifEmpty(_.content).respond(NotFound)
 
-      "returns original result when field is filled" >> { implicit ev: ExecutionEnv ⇒
+      "returns original result when field is filled" >> { //implicit ev: ExecutionEnv ⇒
         val result = dir(FakeRequest().withBody(ProcessResult(Some("content"))))
         result.map(_.header.status) must be_==(OK).awaitFor(defaultTimeout)
       }
 
-      "returns alternative result when field is empty" >> { implicit ev: ExecutionEnv ⇒
+      "returns alternative result when field is empty" >> { //implicit ev: ExecutionEnv ⇒
         val result = dir(FakeRequest().withBody(ProcessResult(None)))
         result.map(_.header.status) must be_==(NOT_FOUND).awaitFor(defaultTimeout)
       }
 
     }
 
-    "with filter" >> { implicit ev: ExecutionEnv ⇒
+    "with filter" >> new WithSystem {
       import Filters._
 
       val endpoint = handle(

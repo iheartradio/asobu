@@ -1,24 +1,26 @@
 package asobu.distributed.service
 
-import akka.actor.{Props, Actor}
+import akka.actor.{Actor, Props}
 import akka.actor.Actor.Receive
+import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.service.Action.DistributedRequest
 import asobu.distributed.service.ActionExtractorSpec._
-import asobu.distributed.{util, PredefinedDefs, EndpointDefinition}
-import asobu.distributed.util.{MockRoute, ScopeWithActor, SpecWithActorCluster, SerializableTest}
+import asobu.distributed.{EndpointDefinition, PredefinedDefs, util}
+import asobu.distributed.util.{MockRoute, ScopeWithActor, SerializableTest, SpecWithActorCluster}
 import asobu.dsl.ExtractResult
 import asobu.dsl.extractors.JsonBodyExtractor
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.specification.mutable.ExecutionEnvironment
-import play.api.libs.json.{JsString, JsNumber, Json}
+import play.api.libs.json.{JsNumber, JsString, Json}
 import play.api.mvc.Results.Ok
 import play.core.routing.RouteParams
-import play.routes.compiler.{HandlerCall, PathPattern, HttpVerb, Route}
+import play.routes.compiler.{HandlerCall, HttpVerb, PathPattern, Route}
 import shapeless._
 import shapeless.record.Record
+
 import concurrent.duration._
 import scala.concurrent.Future
 import play.api.test.FakeRequest
@@ -40,6 +42,7 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
   implicit val ao: Timeout = 1.seconds
   val testBE = system.actorOf(testBackend)
+  implicit val mat = ActorMaterializer()
 
   def is(implicit ee: ExecutionEnv) = {
     "can build endpoint extracting params only" >> new SyntaxScope {

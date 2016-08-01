@@ -3,7 +3,7 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val play = "2.4.6"
+    val play = "2.5.3"
     val specs2 = "3.6.6"
     val akka = "2.4.8"
   }
@@ -59,7 +59,7 @@ object Dependencies {
   )
 
   val compilerPlugins = Seq (
-    compilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.1.0" cross CrossVersion.full),
+    compilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full),
     compilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
   )
 

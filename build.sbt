@@ -60,6 +60,7 @@ val noPublishing = Seq(publish := (), publishLocal := (), publishArtifact := fal
 val commonSettings = Seq(
   scalaVersion := "2.11.8",
   scalacOptions ++= Seq(
+    "-feature",
     "-deprecation",
     "-unchecked",
     "-Xlint"
