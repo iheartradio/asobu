@@ -1,11 +1,19 @@
 
+addCommandAlias("validate", Seq(
+  "clean",
+  "coverage",
+  "test",
+  "coverageReport",
+  "coverageAggregate"
+).mkString(";", ";", ""))
+
 lazy val root = Project("root", file("."))
-  .aggregate(dsl, dslAkka, distributed, distributedKanaloa)
+  .aggregate(asobuDsl, dslAkka, distributed, distributedKanaloa)
   .settings(commonSettings:_*)
   .settings(noPublishing: _*)
   .settings(Testing.settings: _*)
 
-lazy val dsl = Project("asobu-dsl", file("dsl"))
+lazy val asobuDsl = Project("asobu-dsl", file("dsl"))
   .settings(
     commonSettings ++
       Dependencies.settings ++
@@ -15,8 +23,8 @@ lazy val dsl = Project("asobu-dsl", file("dsl"))
   )
 
 lazy val dslAkka = Project("asobu-dsl-akka", file("dsl-akka"))
-  .dependsOn(dsl)
-  .aggregate(dsl)
+  .dependsOn(asobuDsl)
+  .aggregate(asobuDsl)
   .settings(
     commonSettings ++
       Dependencies.settings ++
@@ -28,8 +36,8 @@ lazy val dslAkka = Project("asobu-dsl-akka", file("dsl-akka"))
   )
 
 lazy val distributed = Project("asobu-distributed", file("distributed"))
-  .dependsOn(dsl)
-  .aggregate(dsl)
+  .dependsOn(asobuDsl)
+  .aggregate(asobuDsl)
   .settings(
     commonSettings ++
       Dependencies.settings ++
