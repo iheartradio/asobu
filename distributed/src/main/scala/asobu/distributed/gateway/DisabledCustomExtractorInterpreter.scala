@@ -6,7 +6,7 @@ import asobu.distributed.CustomRequestExtractorDefinition
 import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.dsl.{Extractor, RequestExtractor}
 import cats.data.XorT
-import cats.std.future._
+import cats.instances.future._
 import com.google.inject.Singleton
 import play.api.mvc.{Request, AnyContent, Results}, Results.InternalServerError
 

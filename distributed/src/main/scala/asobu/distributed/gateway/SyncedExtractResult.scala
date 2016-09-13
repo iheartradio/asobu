@@ -25,6 +25,8 @@ object SyncedExtractResult {
     def pure[A](x: A): SyncedExtractResult[A] = xm.pure(x)
 
     def flatMap[A, B](fa: SyncedExtractResult[A])(f: (A) ⇒ SyncedExtractResult[B]): SyncedExtractResult[B] = xm.flatMap(fa)(f(_))
+
+    def tailRecM[A, B](a: A)(f: (A) ⇒ SyncedExtractResult[Either[A, B]]): SyncedExtractResult[B] = xm.tailRecM(a)(f(_))
   }
 
 }

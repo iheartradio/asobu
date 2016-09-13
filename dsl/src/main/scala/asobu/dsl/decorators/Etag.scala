@@ -4,7 +4,7 @@ import asobu.dsl._
 import org.joda.time.DateTime
 import play.api.mvc.Result
 import play.api.mvc.Results._
-import cats.std.all._
+import CatsInstances._
 import scala.concurrent.{ExecutionContext, Future}
 
 //todo: need a test in syntax and example of actual usage here

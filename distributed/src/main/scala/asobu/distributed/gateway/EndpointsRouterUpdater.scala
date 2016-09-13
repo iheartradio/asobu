@@ -8,7 +8,7 @@ import asobu.distributed.gateway.EndpointsRouterUpdater.InvalidDData
 import asobu.distributed.{EndpointDefinition, EndpointsRegistry}
 
 import scala.concurrent.duration._
-import cats.std.option._
+import cats.instances.option._
 import cats.syntax.cartesian._
 
 import scala.concurrent.ExecutionContext

@@ -1,10 +1,24 @@
 package asobu.dsl
 
 import cats.functor.Contravariant
+import cats.instances._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-trait CatsInstances extends cats.std.AllInstances {
+//has to exclude tuple instances due to https://github.com/typelevel/cats/issues/1368
+trait CatsInstances extends FunctionInstances
+    with StringInstances
+    with EitherInstances
+    with ListInstances
+    with OptionInstances
+    with SetInstances
+    with StreamInstances
+    with VectorInstances
+    with MapInstances
+    with BigIntInstances
+    with BigDecimalInstances
+    with FutureInstances
+    with TryInstances {
   implicit def partialFunctionContravariant[R]: Contravariant[PartialFunction[?, R]] =
     new Contravariant[PartialFunction[?, R]] {
       def contramap[T1, T0](pa: PartialFunction[T1, R])(f: T0 ⇒ T1) = new PartialFunction[T0, R] {

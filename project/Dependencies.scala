@@ -25,8 +25,8 @@ object Dependencies {
   )
 
   val typelevel = Seq(
-    "org.typelevel" %% "cats" % "0.5.0",
-    "org.typelevel" %% "kittens" % "1.0.0-M3"
+    "org.typelevel" %% "cats" % "0.7.2",
+    "org.typelevel" %% "kittens" % "1.0.0-M4"
   )
 
 
@@ -44,7 +44,7 @@ object Dependencies {
   )
 
   val kanaloa = Seq(
-    "com.iheart" %% "kanaloa-cluster" % "0.4.0-RC9"
+    "com.iheart" %% "kanaloa-cluster" % "0.4.0"
   )
 
   val test = Seq(

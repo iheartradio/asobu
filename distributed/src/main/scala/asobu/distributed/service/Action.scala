@@ -35,7 +35,7 @@ trait Action {
 
   class RemoteHandler extends Actor {
     import context.dispatcher
-    import cats.std.future._
+    import cats.instances.future._
     def receive: Receive = {
       case dr: DistributedRequest[extractors.LToSend] @unchecked ⇒
 

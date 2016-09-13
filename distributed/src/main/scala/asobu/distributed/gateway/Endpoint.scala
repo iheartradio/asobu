@@ -15,7 +15,7 @@ import play.core.routing
 import play.core.routing.Route.ParamsExtractor
 import play.core.routing.RouteParams
 import play.routes.compiler.{DynamicPart, PathPart, StaticPart}
-import cats.std.all._
+import asobu.dsl.CatsInstances._
 import scala.concurrent.{ExecutionContext, Future, duration}, duration._
 
 trait EndpointRoute {

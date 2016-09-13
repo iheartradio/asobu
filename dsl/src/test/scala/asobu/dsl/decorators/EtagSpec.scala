@@ -10,7 +10,7 @@ import play.api.mvc.Results.{Ok, NotModified}
 import play.api.http.Status._
 import concurrent.duration._
 import play.api.http.HeaderNames.ETAG
-import cats.std.future._
+import cats.instances.future._
 
 import scala.concurrent.Future
 

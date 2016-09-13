@@ -48,8 +48,8 @@ object EndpointDefinitionParser {
     content: String,
     resourceName: String
   ): Either[Seq[RoutesCompilationError], List[Route]] = {
-    import cats.std.either._
-    import cats.std.list._
+    import cats.instances.either._
+    import cats.instances.list._
     import cats.syntax.traverse._
 
     val phf = placeHolderFile(resourceName) //to conform to play api

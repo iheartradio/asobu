@@ -21,7 +21,7 @@ import shapeless.record.Record
 
 import scala.concurrent.Future
 import play.api.test.FakeRequest
-import cats.std.future._
+import cats.instances.future._
 import util.implicits._
 import concurrent.duration._
 
