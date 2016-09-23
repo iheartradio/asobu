@@ -6,6 +6,8 @@
 
 # Asobu
 
+## Note: this libary is not ready for external usage outside of iHeartRadio yet. 
+
 Asobu is a library that provides ability to create distributed Http endpoints between Play applications and Akka applications deployed in an Akka cluster.
 
 ## Caveat
