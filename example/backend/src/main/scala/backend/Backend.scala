@@ -12,7 +12,7 @@ import com.iheart.playSwagger.SwaggerSpecGenerator
 import com.typesafe.config.ConfigFactory
 import backend.factorial._
 import meta.BuildInfo
-import play.api.libs.json.JsObject
+import play.api.libs.json._
 import play.routes.compiler.Route
 import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap
@@ -48,7 +48,7 @@ object Backend extends App {
   lazy val swaggerGenerator = SwaggerSpecGenerator("backend")(getClass.getClassLoader)
 
   implicit val apiDocGenerator = (prefix: Prefix, routes: Seq[Route]) => {
-    val doc: JsObject = swaggerGenerator.generateFromRoutes(ListMap(("backend",(prefix.value, routes))))
+    val doc: JsObject = swaggerGenerator.generateFromRoutes(ListMap(("backend",(prefix.value, routes))), Json.obj())
     Some(doc)
   }
 
