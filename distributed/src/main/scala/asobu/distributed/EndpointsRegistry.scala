@@ -6,6 +6,7 @@ import akka.cluster.ddata.{LWWMap, LWWMapKey, DistributedData}
 import akka.cluster.ddata.Replicator._
 import asobu.distributed.EndpointsRegistry.DocDataType
 import asobu.distributed.gateway.enricher.Interpreter
+import asobu.distributed.protocol.EndpointDefinition
 import play.api.libs.json.{JsNumber, Json, JsObject}
 import concurrent.duration._
 

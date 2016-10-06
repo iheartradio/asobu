@@ -1,9 +1,8 @@
 package asobu.distributed.service
 
 import java.io.File
-
-import asobu.distributed.EndpointDefinition
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.protocol.EndpointDefinition
 import play.routes.compiler.{Route, RoutesCompilationError, RoutesFileParser}
 
 import scala.io.Source

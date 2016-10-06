@@ -1,16 +1,10 @@
-package asobu.distributed
+package asobu.distributed.protocol
 
-import akka.actor.{ActorPath, ActorRef}
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.gateway.RoutesCompilerExtra._
-import asobu.distributed.gateway.enricher.Interpreter
-import asobu.dsl.{RequestExtractor, Extractor, ExtractResult}
-import play.api.mvc.{AnyContent, Request}
-import play.core.routing.RouteParams
-import play.routes.compiler.{PathPattern, HttpVerb, Route}
-import shapeless.{HNil, HList}
-
-import scala.concurrent.ExecutionContext
+import akka.actor.ActorPath
+import asobu.distributed.RequestEnricherDefinition
+import asobu.distributed.protocol.Prefix
+import play.routes.compiler.{HttpVerb, PathPattern, Route}
+import EndpointDefinition._
 
 @SerialVersionUID(2L)
 case class EndpointDefinition(
@@ -45,6 +39,13 @@ case class EndpointDefinition(
 
 object EndpointDefinition {
 
+  case class Verb(value: String)
+
+  sealed trait PathPath
+  case class StaticPathPart(value: String) extends PathPath
+  case class DynamicPathPart(name: String, constraint: String, encode: Boolean) extends PathPath
+  case class HandlerAddress(value: String) extends AnyVal
+
   def apply(
     prefix: Prefix,
     route: Route,
@@ -64,4 +65,15 @@ object EndpointDefinition {
       version
     )
 
+}
+
+@SerialVersionUID(1L)
+class Prefix private (val value: String) extends AnyVal
+
+object Prefix {
+  val root = apply("/")
+  def apply(value: String): Prefix = {
+    assert(value.startsWith("/"), "prefix must start with /")
+    new Prefix(value)
+  }
 }

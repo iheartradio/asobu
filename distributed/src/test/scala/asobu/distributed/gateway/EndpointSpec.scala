@@ -2,9 +2,10 @@ package asobu.distributed.gateway
 
 import akka.actor._
 import asobu.distributed.gateway.enricher.DisabledInterpreter
+import asobu.distributed.protocol.{Prefix, EndpointDefinition}
 import asobu.distributed.util.{EndpointUtil, TestClusterActorSystem}
-import asobu.distributed.{util, EndpointDefinition}
-import asobu.distributed.gateway.Endpoint.{EndpointFactory, Prefix}
+import asobu.distributed.util
+import asobu.distributed.gateway.Endpoint.EndpointFactory
 import asobu.distributed.service.EndpointRoutesParser
 import org.specs2.mock.Mockito
 import play.api.mvc.RequestHeader

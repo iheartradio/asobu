@@ -3,7 +3,8 @@ package asobu.distributed
 import akka.actor.{ActorRef, ActorRefFactory, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import asobu.distributed.gateway.Endpoint.{EndpointFactory, Prefix}
+import asobu.distributed.gateway.Endpoint.{EndpointFactory}
+import asobu.distributed.protocol.Prefix
 import asobu.distributed.gateway.enricher.{Interpreter, DisabledInterpreter}
 import asobu.distributed.gateway._
 import asobu.distributed.service._

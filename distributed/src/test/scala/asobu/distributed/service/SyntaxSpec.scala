@@ -4,9 +4,10 @@ import akka.actor.{Actor, Props}
 import akka.actor.Actor.Receive
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.service.DRequestExtractorSpec._
-import asobu.distributed.{DRequest, RequestParams, EndpointDefinition, util}
+import asobu.distributed.{DRequest, RequestParams, util}
 import asobu.distributed.util.{MockRoute, ScopeWithActor, SerializableTest, SpecWithActorCluster}
 
 import asobu.dsl.extractors.JsonBodyExtractor

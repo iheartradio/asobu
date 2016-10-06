@@ -3,7 +3,7 @@ package backend
 import akka.actor._
 import akka.cluster.Cluster
 import akka.util.Timeout
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
 import asobu.distributed.{EndpointsRegistry, DefaultEndpointsRegistry}
 import asobu.distributed.service._
 import backend.endpoints.AMixedController

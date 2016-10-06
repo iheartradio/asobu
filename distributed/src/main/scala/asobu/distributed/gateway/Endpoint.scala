@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadLocalRandom
 import akka.actor.{PoisonPill, ActorRef, ActorRefFactory}
 import akka.routing.RoundRobinGroup
 import akka.util.Timeout
+import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.{RequestParams, DRequest, DResult}
 import asobu.distributed.gateway.enricher.Interpreter
 import asobu.distributed._
@@ -18,6 +19,7 @@ import play.routes.compiler.{DynamicPart, PathPart, StaticPart}
 import asobu.dsl.CatsInstances._
 import scala.concurrent.{ExecutionContext, Future, duration}, duration._
 import scala.reflect.ClassTag
+import protocol._
 
 trait EndpointRoute {
   def unapply(requestHeader: Request[AnyContent]): Option[RouteParams]
@@ -116,16 +118,6 @@ abstract class Endpoint(
 }
 
 object Endpoint {
-  @SerialVersionUID(1L)
-  class Prefix private (val value: String) extends AnyVal
-
-  object Prefix {
-    val root = apply("/")
-    def apply(value: String): Prefix = {
-      assert(value.startsWith("/"), "prefix must start with /")
-      new Prefix(value)
-    }
-  }
 
   trait EndpointFactory {
     def apply(endpointDef: EndpointDefinition): Endpoint

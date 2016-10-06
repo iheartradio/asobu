@@ -1,10 +1,10 @@
 package asobu.distributed.util
 
 import akka.actor.ActorRefFactory
-import asobu.distributed.EndpointDefinition
-import asobu.distributed.gateway.Endpoint.{EndpointFactory, Prefix}
+import asobu.distributed.gateway.Endpoint.EndpointFactory
 import asobu.distributed.gateway.HandlerBridgeProps
 import asobu.distributed.gateway.enricher.DisabledInterpreter
+import asobu.distributed.protocol.{Prefix, EndpointDefinition}
 import asobu.distributed.service.EndpointRoutesParser
 
 import play.routes.compiler.{StaticPart, PathPattern, Route}

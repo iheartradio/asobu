@@ -6,7 +6,8 @@ import akka.cluster.ddata.Replicator._
 
 import asobu.distributed.gateway.Endpoint.EndpointFactory
 import asobu.distributed.gateway.EndpointsRouterUpdater.InvalidDData
-import asobu.distributed.{EndpointDefinition, EndpointsRegistry}
+import asobu.distributed.EndpointsRegistry
+import asobu.distributed.protocol.EndpointDefinition
 
 import scala.concurrent.duration._
 import cats.instances.option._

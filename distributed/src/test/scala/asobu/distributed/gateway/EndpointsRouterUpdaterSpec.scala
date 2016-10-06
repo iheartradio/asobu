@@ -4,7 +4,8 @@ import java.io.InvalidClassException
 
 import akka.actor.{ActorRef, ExtendedActorSystem, UnhandledMessage}
 import asobu.distributed._
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.util.{EndpointUtil, MockRoute, SpecWithActorCluster}
 import akka.actor.ActorDSL._
 import akka.cluster.Cluster

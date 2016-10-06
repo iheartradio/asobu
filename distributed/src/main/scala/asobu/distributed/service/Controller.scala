@@ -1,8 +1,8 @@
 package asobu.distributed.service
 
 import akka.actor.ActorSystem
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.EndpointDefinition
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.protocol.EndpointDefinition
 import play.routes.compiler.{HandlerCall, Route}
 
 import scala.concurrent.{ExecutionContext, Future}

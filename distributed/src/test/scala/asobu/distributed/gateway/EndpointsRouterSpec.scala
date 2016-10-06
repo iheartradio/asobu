@@ -1,9 +1,10 @@
 package asobu.distributed.gateway
 
 import akka.testkit.TestProbe
-import asobu.distributed.{EndpointDefinition, DRequest, DResult}
+import asobu.distributed.protocol.EndpointDefinition
+import asobu.distributed.{DRequest, DResult}
 import asobu.distributed.util.{EndpointUtil, SpecWithActorCluster}
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
 import asobu.distributed.service.EndpointRoutesParser
 import play.api.test.FakeRequest
 import play.routes.compiler._

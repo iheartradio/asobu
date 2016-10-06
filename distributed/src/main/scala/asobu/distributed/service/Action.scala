@@ -5,9 +5,10 @@ import akka.cluster.Cluster
 import Action.UnrecognizedMessage
 import akka.stream.Materializer
 import akka.util.ByteString
+import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.service.extractors.DRequestExtractor
 import asobu.distributed.{DResult, DRequest}
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
 import asobu.distributed._
 import play.api.http.HttpEntity
 import play.api.mvc.{AnyContent, ResponseHeader, Result}
