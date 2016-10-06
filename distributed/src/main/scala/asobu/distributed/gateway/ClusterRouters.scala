@@ -9,7 +9,7 @@ import akka.routing.{Group, RoundRobinGroup, FromConfig}
 import scala.concurrent.{Future, Promise}
 
 /**
- * AkkaCluster enabled Akka routers
+ * AkkaCluster enabled Akka routers todo: this would not be needed with the new kanaloa backend.
  */
 object ClusterRouters {
 

@@ -1,15 +1,13 @@
 package asobu.distributed
 
 import akka.actor.{ActorPath, ActorRef}
-import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed.gateway.Endpoint.Prefix
 import asobu.distributed.gateway.RoutesCompilerExtra._
-import asobu.distributed.service.ActionExtractor.RemoteExtractor
-import asobu.distributed.service.RemoteExtractorDef
-import asobu.dsl.{Extractor, ExtractResult}
+import asobu.distributed.gateway.enricher.Interpreter
+import asobu.dsl.{RequestExtractor, Extractor, ExtractResult}
 import play.api.mvc.{AnyContent, Request}
 import play.core.routing.RouteParams
-import play.routes.compiler.Route
+import play.routes.compiler.{PathPattern, HttpVerb, Route}
 import shapeless.{HNil, HList}
 
 import scala.concurrent.ExecutionContext
@@ -17,25 +15,23 @@ import scala.concurrent.ExecutionContext
 /**
  * Endpoint definition by the remote handler
  */
-trait EndpointDefinition {
-  /**
-   * type of the Message
-   */
-  type T //todo: add serializable bound
-  val routeInfo: Route
-  val prefix: Prefix
+sealed trait EndpointDefinition {
+  def verb: HttpVerb
+  def path: PathPattern
+  def call: String
+  def prefix: Prefix //todo: move prefix to Endpoint set
   def handlerActor: ActorPath
   def clusterRole: String
-  def version: Option[Int]
+  def version: Option[Int] //todo: move version to Endpoint set
 
   val defaultPrefix: String = {
     if (prefix.value.endsWith("/")) "" else "/"
   }
 
   val documentation: (String, String, String) = {
-    val localPath = if (routeInfo.path.parts.isEmpty) "" else defaultPrefix + routeInfo.path.toString
+    val localPath = if (path.parts.isEmpty) "" else defaultPrefix + path.toString
     val pathInfo = prefix.value + localPath
-    (routeInfo.verb.toString, pathInfo, routeInfo.call.toString)
+    (verb.toString, pathInfo, call)
   }
 
   def handlerPath = handlerActor.toStringWithoutAddress
@@ -44,46 +40,66 @@ trait EndpointDefinition {
     val (verb, path, _) = documentation
     s"$verb $path"
   }
-
-  def remoteExtractor(interpreter: Interpreter)(implicit ex: ExecutionContext): RemoteExtractor[T]
-
 }
+
+@SerialVersionUID(2L)
+case class EndpointDefSimple(
+  prefix: Prefix,
+  verb: HttpVerb,
+  path: PathPattern,
+  call: String,
+  handlerActor: ActorPath,
+  clusterRole: String,
+  version: Option[Int] = None
+) extends EndpointDefinition
+
+@SerialVersionUID(2L)
+case class EndpointDefWithEnrichment(
+  prefix: Prefix,
+  verb: HttpVerb,
+  path: PathPattern,
+  call: String,
+  enricherDef: RequestEnricherDefinition,
+  handlerActor: ActorPath,
+  clusterRole: String,
+  version: Option[Int] = None
+) extends EndpointDefinition
 
 object EndpointDefinition {
-  type Aux[T0] = EndpointDefinition { type T = T0 }
-}
-
-@SerialVersionUID(1L)
-case class EndpointDefImpl[LExtracted <: HList, LParam <: HList, LExtra <: HList](
+  def apply(
     prefix: Prefix,
-    routeInfo: Route,
-    remoteExtractorDef: RemoteExtractorDef[LExtracted, LParam, LExtra],
+    route: Route,
     handlerActor: ActorPath,
     clusterRole: String,
     version: Option[Int] = None
-) extends EndpointDefinition {
+  ): EndpointDefinition =
+    EndpointDefSimple(
+      prefix,
+      route.verb,
+      route.path,
+      route.call.toString(),
+      handlerActor,
+      clusterRole,
+      version
+    )
 
-  type T = LExtracted
-
-  def remoteExtractor(interpreter: Interpreter)(implicit ex: ExecutionContext): RemoteExtractor[T] = remoteExtractorDef.extractor(interpreter: Interpreter)
-}
-
-/**
- * Endpoint that takes no input at all, just match a route path
- */
-case class NullaryEndpointDefinition(
+  def apply(
     prefix: Prefix,
-    routeInfo: Route,
+    route: Route,
+    enricherDef: RequestEnricherDefinition,
     handlerActor: ActorPath,
     clusterRole: String,
-    version: Option[Int] = None
-) extends EndpointDefinition {
+    version: Option[Int]
+  ): EndpointDefinition =
+    EndpointDefWithEnrichment(
+      prefix,
+      route.verb,
+      route.path,
+      route.call.toString(),
+      enricherDef,
+      handlerActor,
+      clusterRole,
+      version
+    )
 
-  type T = HNil
-  def extract(routeParams: RouteParams, request: Request[AnyContent]): ExtractResult[T] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    ExtractResult.pure(HNil)
-  }
-
-  def remoteExtractor(interpreter: Interpreter)(implicit ec: ExecutionContext) = Extractor.empty[(RouteParams, Request[AnyContent])]
 }

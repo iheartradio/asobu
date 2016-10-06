@@ -3,7 +3,8 @@ package asobu.distributed.gateway
 import akka.actor._
 import akka.cluster.ddata.LWWMap
 import akka.cluster.ddata.Replicator._
-import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
+
+import asobu.distributed.gateway.Endpoint.EndpointFactory
 import asobu.distributed.gateway.EndpointsRouterUpdater.InvalidDData
 import asobu.distributed.{EndpointDefinition, EndpointsRegistry}
 
@@ -24,9 +25,9 @@ import scala.util.{Failure, Success, Try}
 class EndpointsRouterUpdater(
     registry: EndpointsRegistry,
     endpointsRouter: EndpointsRouter,
-    bridgeProps: HandlerBridgeProps,
+    endpointFactory: EndpointFactory,
     readTimeout: FiniteDuration = 30.seconds
-)(implicit ec: ExecutionContext, interpreter: Interpreter) extends Actor with ActorLogging {
+)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
   import registry._
   import EndpointsRouterUpdater.{sortOutEndpoints, SortResult}
   replicator ! Subscribe(EndpointsDataKey, self)
@@ -41,7 +42,7 @@ class EndpointsRouterUpdater(
       val SortResult(toAdd, toPurge, toKeep) = sortOutEndpoints(endpoints, newDefs)
 
       if (toPurge.nonEmpty || toAdd.nonEmpty) {
-        val updatedEndpoints = toKeep ++ toAdd.map(Endpoint(_, bridgeProps))
+        val updatedEndpoints = toKeep ++ toAdd.map(endpointFactory.apply)
 
         endpointsRouter.update(updatedEndpoints)
 
@@ -97,9 +98,10 @@ object EndpointsRouterUpdater {
   def props(
     registry: EndpointsRegistry,
     endpointsRouter: EndpointsRouter,
+    endpointFactory: EndpointFactory,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-  )(implicit ec: ExecutionContext, interpreter: Interpreter) =
-    Props(new EndpointsRouterUpdater(registry, endpointsRouter, bridgeProps))
+  )(implicit ec: ExecutionContext) =
+    Props(new EndpointsRouterUpdater(registry, endpointsRouter, endpointFactory))
 
   private[gateway] def sortOutEndpoints(existing: List[Endpoint], toUpdate: List[EndpointDefinition]): SortResult = {
     val (toKeep, toPurge) = existing.partition { ep ⇒

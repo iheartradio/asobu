@@ -3,6 +3,9 @@ package asobu.distributed
 import akka.actor.ActorSystem
 import scala.collection.JavaConverters._
 
+/**
+ * Validate if the distributed data is configured correctly.
+ */
 object SystemValidator {
   def validate(system: ActorSystem): Either[String, Unit] = {
     val cfg = system.settings.config

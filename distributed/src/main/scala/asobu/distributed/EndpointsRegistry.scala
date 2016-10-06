@@ -5,17 +5,20 @@ import akka.cluster.{Member, MemberStatus, Cluster}
 import akka.cluster.ddata.{LWWMap, LWWMapKey, DistributedData}
 import akka.cluster.ddata.Replicator._
 import asobu.distributed.EndpointsRegistry.DocDataType
+import asobu.distributed.gateway.enricher.Interpreter
 import play.api.libs.json.{JsNumber, Json, JsObject}
 import concurrent.duration._
 
 trait EndpointsRegistry {
-  val EndpointsDataKey = EndpointsRegistry.EndpointsDataKey
-  val EndpointsDocsKey = EndpointsRegistry.EndpointsDocsKey
 
   def writeConsistency: WriteConsistency
   def readConsistency: ReadConsistency
-  def emptyData: LWWMap[EndpointDefinition]
+  val EndpointsDataKey = LWWMapKey[EndpointDefinition]("endpoints-registry-endpoints")
+
+  val EndpointsDocsKey = LWWMapKey[DocDataType]("endpoints-registry-apidocs")
+
   def emptyDocs: LWWMap[DocDataType]
+  val emptyData = LWWMap.empty[EndpointDefinition]
 
   implicit def node: Cluster
   def replicator: ActorRef
@@ -26,8 +29,6 @@ object EndpointsRegistry {
   //Doc json is stored as String (JsObject isn't that serializable after manipulation)
   type DocDataType = String
 
-  val EndpointsDataKey = LWWMapKey[EndpointDefinition]("endpoints-registry-endpoints")
-  val EndpointsDocsKey = LWWMapKey[DocDataType]("endpoints-registry-apidocs")
 }
 
 case class DefaultEndpointsRegistry(system: ActorSystem) extends EndpointsRegistry {
@@ -35,7 +36,6 @@ case class DefaultEndpointsRegistry(system: ActorSystem) extends EndpointsRegist
 
   val writeConsistency = WriteAll(timeout)
   val readConsistency = ReadMajority(timeout)
-  val emptyData = LWWMap.empty[EndpointDefinition]
   val emptyDocs = LWWMap.empty[DocDataType]
 
   implicit val node = Cluster(system)
@@ -43,6 +43,7 @@ case class DefaultEndpointsRegistry(system: ActorSystem) extends EndpointsRegist
 }
 
 class EndpointsRegistryUpdater(registry: EndpointsRegistry) extends Actor with ActorLogging {
+
   import EndpointsRegistryUpdater._
   import registry._
 

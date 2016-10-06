@@ -26,7 +26,7 @@ class EndpointsRouter(onNotFound: RequestHeader ⇒ Future[Result])(implicit ex:
 
   def update(endpoints: List[Endpoint]): Future[(Handler, List[Endpoint])] = {
     def toPartial(endpoint: Endpoint): Handler = {
-      case req @ endpoint(requestParams) ⇒ endpoint.handle(requestParams, req)
+      case req @ endpoint(requestParams) ⇒ endpoint.handle(GateWayRequest(requestParams, req))
     }
 
     //todo: improve performance by doing a prefix search first

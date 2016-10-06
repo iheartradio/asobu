@@ -9,7 +9,7 @@ trait ExtraExtractors {
   def remoteAddress: RequestExtractor[String] = RequestExtractor(_.remoteAddress)
 
   def queryString(key: String)(implicit ex: ExecutionContext): RequestExtractor[String] =
-    Extractor.fromFunction { (r: Request[AnyContent]) ⇒
+    Extractor.of { (r: Request[AnyContent]) ⇒
       ExtractResult.fromOption(r.getQueryString(key), BadRequest(s"Cannot find query parameter $key"))
     }
 }

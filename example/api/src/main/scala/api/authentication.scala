@@ -1,15 +1,8 @@
 package api
 
-import asobu.distributed.{CustomRequestExtractorDefinition, PredefinedDefs, RequestExtractorDefinition}
-import asobu.dsl.RequestExtractor
-import play.api.mvc.RequestHeader
-import shapeless.HNil
-import asobu.dsl.extractors.AuthInfoExtractorBuilder
+import asobu.distributed.RequestEnricherDefinition
 
-import scala.concurrent.{ExecutionContext, Future}
+  sealed trait ExampleEnricher extends RequestEnricherDefinition
 
-object authentication {
 
-  case object Authenticated extends CustomRequestExtractorDefinition[String]
-
-}
+  case object Authenticated extends ExampleEnricher

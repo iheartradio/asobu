@@ -1,10 +1,11 @@
 package asobu.distributed.gateway
 
 import akka.actor._
-import asobu.distributed.util.{TestClusterActorSystem}
-import asobu.distributed.{util, EndpointDefinition, NullaryEndpointDefinition}
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service.EndpointDefinitionParser
+import asobu.distributed.gateway.enricher.DisabledInterpreter
+import asobu.distributed.util.{EndpointUtil, TestClusterActorSystem}
+import asobu.distributed.{EndpointDefSimple, util, EndpointDefinition}
+import asobu.distributed.gateway.Endpoint.{EndpointFactory, Prefix}
+import asobu.distributed.service.EndpointRoutesParser
 import org.specs2.mock.Mockito
 import play.api.mvc.RequestHeader
 import play.api.test.{FakeRequest, PlaySpecification}
@@ -12,7 +13,6 @@ import play.core.routing.RouteParams
 
 import play.routes.compiler._
 import shapeless.HNil
-import util.implicits._
 import scala.util.Random
 
 object EndpointSpec extends PlaySpecification with Mockito {
@@ -30,27 +30,30 @@ object EndpointSpec extends PlaySpecification with Mockito {
       |
     """.stripMargin
 
-  val createEndpointDef = (route: Route, prefix: Prefix) ⇒ {
-    NullaryEndpointDefinition(prefix, route, ActorPath.fromString("akka://my-sys/user/service-a/worker1"), "role"): EndpointDefinition
-  }
-
-  lazy val parserResult = EndpointDefinitionParser.parse(Prefix("/"), routeString, createEndpointDef)
-  lazy val endPoints = parserResult.right.get
+  lazy val parserResult = EndpointRoutesParser.parseContent(routeString)
+  lazy val routesResult = parserResult.right.get
+  lazy val endPoints = EndpointUtil.parseEndpoints(routeString)((route: Route, prefix: Prefix) ⇒ {
+    EndpointDefinition(
+      prefix,
+      route,
+      ActorPath.fromString("akka://my-sys/user/service-a/worker1"),
+      "role"
+    ): EndpointDefinition
+  })
   lazy val ep1: EndpointDefinition = endPoints(0)
   lazy val ep2: EndpointDefinition = endPoints(1)
 
-  "Parse to endpoints" >> {
-    parserResult must beRight[List[EndpointDefinition]]
+  "EndpointUtil parse to endpoints" >> {
+    parserResult must beRight[List[Route]]
     parserResult.right.get.length === 2
 
     "parse comments" >> {
-      val route: Route = ep1.routeInfo
-      route.verb === HttpVerb(GET)
-      route.comments === List(Comment(" Some Comments"), Comment(" Some other Comments"))
+      routesResult.head.verb === HttpVerb(GET)
+      routesResult.head.comments === List(Comment(" Some Comments"), Comment(" Some other Comments"))
     }
 
     "parse params" >> {
-      val route: Route = ep1.routeInfo
+      val route: Route = routesResult.head
       val parameter = route.call.parameters.get.head
       parameter.name === "n"
       parameter.typeName === "Int"
@@ -59,10 +62,10 @@ object EndpointSpec extends PlaySpecification with Mockito {
   }
 
   "unapply" >> {
-
     def extractParams(epd: EndpointDefinition, request: RequestHeader): Option[RouteParams] = {
       implicit val system = TestClusterActorSystem.create(Random.nextInt(21444) + 2560)()
-      val endpoint = Endpoint(epd)
+
+      val endpoint = EndpointUtil.endpointOf(epd)
       val result = request match {
         case endpoint(params) ⇒ Some(params)
         case _                ⇒ None

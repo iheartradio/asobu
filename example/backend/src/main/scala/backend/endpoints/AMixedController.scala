@@ -2,26 +2,25 @@ package backend.endpoints
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
-import api.FactorialService
+import api.{Authenticated, FactorialService}
 import api.FactorialService.Compute
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service.Action.DistributedResult
-import asobu.distributed.service.{BodyExtractor, EndpointsRegistryClient, DistributedController, Controller}
+import asobu.distributed.service._
 import backend.models.Student
 import backend.school.StudentService
 import backend.school.StudentService.Grade
-import cats.data.Kleisli
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.Results._
 import concurrent.duration._
-import api.authentication.Authenticated
 import akka.stream.Materializer
+import asobu.dsl.CatsInstances._
+
 
 //todo: this example includes endpoints irrelevant to each other. Improve by breaking it up.
 case class AMixedController(factorialBackend: ActorRef, studentBackend: ActorRef)(implicit mat: Materializer) extends DistributedController {
   import Formats._
 
   import concurrent.ExecutionContext.Implicits.global
+
   import asobu.dsl.DefaultExtractorImplicits._
 
   implicit val ao : Timeout = 30.seconds
@@ -32,11 +31,11 @@ case class AMixedController(factorialBackend: ActorRef, studentBackend: ActorRef
         using(factorialBackend).
           expect[FactorialService.Result] >>
           respond(r => Ok(r.result.toString))
-      ),
+      ) ,
 
     handle("ep3",
+      Authenticated,
       process[Student](
-        Authenticated.void,
         fromJsonBody[Student]
       ))(
         using(studentBackend).
@@ -51,4 +50,3 @@ object Formats {
   implicit val studentFormat: Format[Student] = Json.format[Student]
   implicit val gradeFormat: Format[Grade] = Json.format[Grade]
 }
-

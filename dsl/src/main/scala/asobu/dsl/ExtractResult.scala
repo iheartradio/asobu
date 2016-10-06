@@ -12,25 +12,32 @@ import scala.util.Try
 object ExtractResult {
   import CatsInstances._
 
-  def left[T](r: Result)(implicit ex: ExecutionContext): ExtractResult[T] =
-    XorT.left[Future, Result, T](Future.successful(r))
+  def apply[T](fxor: Future[Xor[Result, T]]): ExtractResult[T] =
+    XorT(fxor)
 
-  def pure[T](t: T)(implicit ex: ExecutionContext): ExtractResult[T] =
-    XorT.pure[Future, Result, T](t)
+  def apply[T](xor: Xor[Result, T]): ExtractResult[T] =
+    apply(Future.successful(xor))
 
-  def fromOption[T](o: Option[T], ifNone: ⇒ Result)(implicit ex: ExecutionContext): ExtractResult[T] =
-    fromXor(Xor.fromOption(o, ifNone))
+  def left[T](r: Result): ExtractResult[T] =
+    apply(r.left[T])
 
-  def right[T](ft: Future[T])(implicit ex: ExecutionContext) = XorT.right[Future, Result, T](ft)
+  def pure[T](t: T): ExtractResult[T] =
+    apply(t.right[Result])
 
-  def fromTry[T](t: Try[T])(implicit ifFailure: FallbackResult, ex: ExecutionContext): ExtractResult[T] =
-    fromXor(Xor.fromTry(t).leftMap(ifFailure))
+  def fromOption[T](o: Option[T], ifNone: ⇒ Result): ExtractResult[T] =
+    apply(Xor.fromOption(o, ifNone))
 
-  def fromEither[T](fe: Future[Either[Result, T]])(implicit ex: ExecutionContext): ExtractResult[T] =
-    XorT(fe.map(Xor.fromEither))
+  def right[T](ft: Future[T])(implicit ex: ExecutionContext): ExtractResult[T] =
+    XorT.right[Future, Result, T](ft)
 
-  def fromXor[T](xor: Xor[Result, T])(implicit ex: ExecutionContext): ExtractResult[T] =
-    XorT.fromXor[Future](xor)
+  def fromTry[T](t: Try[T])(implicit ifFailure: FallbackResult): ExtractResult[T] =
+    apply(Xor.fromTry(t).leftMap(ifFailure))
+
+  def fromEitherF[T](fe: Future[Either[Result, T]])(implicit ex: ExecutionContext): ExtractResult[T] =
+    apply(fe.map(Xor.fromEither))
+
+  def fromEither[T](e: Either[Result, T]): ExtractResult[T] =
+    apply(Xor.fromEither(e))
 
 }
 

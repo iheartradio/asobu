@@ -18,7 +18,7 @@ class AuthInfoExtractorBuilder[AuthInfoT](buildAuthInfo: RequestHeader ⇒ Futur
     apply.map(toRecord)
 
   def apply(): RequestExtractor[AuthInfoT] = Kleisli(
-    buildAuthInfo.andThen(_.map(_.left.map(Unauthorized(_)))).andThen(fromEither)
+    buildAuthInfo.andThen(_.map(_.left.map(Unauthorized(_)))).andThen(fromEitherF)
   )
 
   /**

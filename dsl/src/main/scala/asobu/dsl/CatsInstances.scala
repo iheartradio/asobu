@@ -5,7 +5,7 @@ import cats.instances._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-//has to exclude tuple instances due to https://github.com/typelevel/cats/issues/1368
+//todo go back to AllInstances
 trait CatsInstances extends FunctionInstances
     with StringInstances
     with EitherInstances

@@ -5,9 +5,8 @@ import akka.actor.Actor.Receive
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service.Action.DistributedRequest
-import asobu.distributed.service.ActionExtractorSpec._
-import asobu.distributed.{EndpointDefinition, PredefinedDefs, util}
+import asobu.distributed.service.DRequestExtractorSpec._
+import asobu.distributed.{DRequest, RequestParams, EndpointDefinition, util}
 import asobu.distributed.util.{MockRoute, ScopeWithActor, SerializableTest, SpecWithActorCluster}
 
 import asobu.dsl.extractors.JsonBodyExtractor
@@ -22,7 +21,6 @@ import shapeless.record.Record
 import scala.concurrent.Future
 import play.api.test.FakeRequest
 import cats.instances.future._
-import util.implicits._
 import concurrent.duration._
 
 class SyntaxSpec extends SpecWithActorCluster with SerializableTest with ExecutionEnvironment {
@@ -70,6 +68,7 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
     }
 
     "can build endpoint extracting param body, and header" >> new SyntaxScope {
+      import asobu.distributed.service.extractors.DRequestExtractors._
       val action = handle(
         "anEndpoint",
         process[LargeInput](
@@ -82,19 +81,12 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
       endpoint must beSerializable
 
-      val params = RouteParams(Map.empty, Map.empty)
+      val params = RequestParams(Map.empty, Map.empty)
       val req = FakeRequest().withHeaders("someheaderField" → "true").withJsonBody(Json.obj("a" → JsString("avalue"), "b" → JsNumber(10)))
 
-      val expectedExtracted = Record(flagInHeader = true).asInstanceOf[action.ExtractedRemotely] //todo find a way to refine action.ExtractedRemotely
+      val dRequest = DRequest(params, req)
 
-      val remoteResult = endpoint.remoteExtractor(nullInterpreter).run((params, req)).toEither
-
-      remoteResult must beRight(expectedExtracted: Any).await(retries = 0, timeout = 3.seconds)
-
-      val distributedRequest = DistributedRequest(expectedExtracted, req.body)
-
-      import scala.concurrent.ExecutionContext.Implicits.global
-      val localResult = action.extractors.localExtract(distributedRequest).toEither
+      val localResult = action.extractor.run(dRequest).toEither
 
       localResult must beRight(LargeInput(a = "avalue", b = 10, flagInHeader = true)).await(retries = 0, timeout = 3.seconds)
 
@@ -103,7 +95,7 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
 
 }
 
-trait SyntaxScope extends ScopeWithActor with Controller with Syntax with PredefinedDefs {
+trait SyntaxScope extends ScopeWithActor with Controller with Syntax {
   import play.api.http.HttpVerbs._
 
   def endpointOf(action: Action): EndpointDefinition = {

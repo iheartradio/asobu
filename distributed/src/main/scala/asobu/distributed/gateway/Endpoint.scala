@@ -5,10 +5,10 @@ import java.util.concurrent.ThreadLocalRandom
 import akka.actor.{PoisonPill, ActorRef, ActorRefFactory}
 import akka.routing.RoundRobinGroup
 import akka.util.Timeout
-import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
-import asobu.distributed.service.Action.{DistributedResult, DistributedRequest}
-import asobu.distributed.EndpointDefinition
-import asobu.distributed.service.ActionExtractor.RemoteExtractor
+import asobu.distributed.{RequestParams, DRequest, DResult}
+import asobu.distributed.gateway.enricher.Interpreter
+import asobu.distributed._
+import asobu.dsl.{Extractor, ExtractResult}
 import play.api.mvc.Results._
 import play.api.mvc.{Result, AnyContent, Request}
 import play.core.routing
@@ -17,33 +17,31 @@ import play.core.routing.RouteParams
 import play.routes.compiler.{DynamicPart, PathPart, StaticPart}
 import asobu.dsl.CatsInstances._
 import scala.concurrent.{ExecutionContext, Future, duration}, duration._
+import scala.reflect.ClassTag
 
 trait EndpointRoute {
   def unapply(requestHeader: Request[AnyContent]): Option[RouteParams]
 }
 
 trait EndpointHandler {
-  def handle(routeParams: RouteParams, request: Request[AnyContent]): Future[Result]
+  def handle(gateWayRequest: GateWayRequest): Future[Result]
 }
 
 /**
- *
  * @param definition of the endpoint provided by the service side
  * @param bridgeProps a factory that creates the prop for an bridge actor between
  *                    gateway router and actual handling service actor
  */
-case class Endpoint(
-    definition: EndpointDefinition,
+sealed abstract class Endpoint(
+    val definition: EndpointDefinition,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-)(implicit
-  arf: ActorRefFactory,
-    ec: ExecutionContext,
-    interpreter: Interpreter) extends EndpointRoute with EndpointHandler {
-
-  type T = definition.T
-
-  import definition._
+)(
+    implicit
+    arf: ActorRefFactory,
+    ec: ExecutionContext
+) extends EndpointRoute with EndpointHandler {
   implicit val ak: Timeout = 10.minutes //todo: find the right place to configure this
+  import definition._
 
   private val handlerRef: ActorRef = {
     val props = bridgeProps(handlerPath, definition.clusterRole)
@@ -70,34 +68,72 @@ case class Endpoint(
 
   //todo: think of a way to get rid of the ask below, e.g. create an new one-time actor for handling (just like ask),
   // or have distributed request have the reply to Address and then send it to handlerRef as the implicit sender.
-  def handle(routeParams: RouteParams, request: Request[AnyContent]): Future[Result] = {
+  def handle(request: GateWayRequest): Future[Result] = {
     import akka.pattern.ask
-    import ExecutionContext.Implicits.global
+    //    import ExecutionContext.Implicits.global
 
-    def handleMessageWithBackend(t: T): Future[Result] = {
-      (handlerRef ? DistributedRequest(t, request.body, request.headers.headers)).collect {
-        case r: DistributedResult ⇒ r.toResult
-        case m                    ⇒ InternalServerError(s"Unsupported result from backend ${m.getClass}")
+    val dRequestER: ExtractResult[DRequest] = {
+      val pathParamsErrors = request.routeParam.path.collect {
+        case (key, Left(e)) ⇒ (key, e)
       }
+
+      if (pathParamsErrors.nonEmpty)
+        ExtractResult.left(BadRequest("unable to parse path params: " + pathParamsErrors.mkString(",")))
+      else
+        ExtractResult.pure {
+          val pathParams = request.routeParam.path.collect { case (key, Right(v)) ⇒ (key, v) }
+          DRequest(
+            RequestParams(pathParams, request.routeParam.queryString),
+            request.request.body,
+            request.request.headers.headers
+          )
+        }
     }
-    val message = extractor.run((routeParams, request))
-    message.fold[Future[Result]](
-      Future.successful,
-      handleMessageWithBackend
-    ).flatMap(identity)
+
+    val finalResult: ExtractResult[Result] = for {
+      drRaw ← dRequestER
+      dr ← enricher(drRaw)
+      result ← ExtractResult.fromEitherF((handlerRef ? dr).map {
+        case r: DResult ⇒ Right(r.toResult) //todo
+        case m          ⇒ Left(InternalServerError(s"Unsupported result from backend ${m.getClass}"))
+      })
+    } yield result
+
+    finalResult.fold(identity, identity)
   }
 
-  lazy val extractor: RemoteExtractor[T] = definition.remoteExtractor(interpreter)
-
   private lazy val routeExtractors: ParamsExtractor = {
-    val localParts = if (routeInfo.path.parts.nonEmpty) StaticPart(defaultPrefix) +: routeInfo.path.parts else Nil
-    routing.Route(routeInfo.verb.value, routing.PathPattern(toCPart(StaticPart(prefix.value) +: localParts)))
+    val localParts = if (path.parts.nonEmpty) StaticPart(defaultPrefix) +: path.parts else Nil
+    routing.Route(verb.value, routing.PathPattern(toCPart(StaticPart(prefix.value) +: localParts)))
   }
 
   private def toCPart(parts: Seq[PathPart]): Seq[routing.PathPart] = parts map {
     case DynamicPart(n, c, e) ⇒ routing.DynamicPart(n, c, e)
     case StaticPart(v)        ⇒ routing.StaticPart(v)
   }
+
+  protected val enricher: RequestEnricher
+}
+
+class EndpointWithEnrichment[T <: RequestEnricherDefinition: Interpreter: ClassTag](
+    definition0: EndpointDefWithEnrichment,
+    bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
+)(implicit
+  arf: ActorRefFactory,
+    ec: ExecutionContext) extends Endpoint(definition0, bridgeProps) with EndpointRoute with EndpointHandler {
+
+  lazy val enricher: RequestEnricher = Interpreter.interpret(definition0.enricherDef)
+
+}
+
+class EndpointSimple(
+    definition: EndpointDefinition,
+    bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
+)(implicit
+  arf: ActorRefFactory,
+    ec: ExecutionContext) extends Endpoint(definition, bridgeProps) with EndpointRoute with EndpointHandler {
+
+  val enricher: RequestEnricher = Extractor(identity)
 
 }
 
@@ -110,6 +146,25 @@ object Endpoint {
     def apply(value: String): Prefix = {
       assert(value.startsWith("/"), "prefix must start with /")
       new Prefix(value)
+    }
+  }
+
+  trait EndpointFactory {
+    def apply(endpointDef: EndpointDefinition): Endpoint
+  }
+
+  object EndpointFactory {
+    def apply[T <: RequestEnricherDefinition: Interpreter: ClassTag](bridgeProps: HandlerBridgeProps)(implicit
+      arf: ActorRefFactory,
+      ec: ExecutionContext): EndpointFactory = new EndpointFactoryImpl[T](bridgeProps)
+  }
+
+  class EndpointFactoryImpl[T <: RequestEnricherDefinition: Interpreter: ClassTag](bridgeProps: HandlerBridgeProps)(implicit
+    arf: ActorRefFactory,
+      ec: ExecutionContext) extends EndpointFactory {
+    def apply(endpointDef: EndpointDefinition): Endpoint = endpointDef match {
+      case ed: EndpointDefWithEnrichment ⇒ new EndpointWithEnrichment(ed, bridgeProps)
+      case ed: EndpointDefSimple         ⇒ new EndpointSimple(ed, bridgeProps)
     }
   }
 }

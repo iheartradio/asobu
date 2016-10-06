@@ -21,7 +21,7 @@ trait Controller {
 
   def actionName(shortName: String) = getClass.getName.stripSuffix("$").replace('$', '.') + "." + shortName //todo: a more solid name for action
 
-  lazy val routes: List[Route] = EndpointDefinitionParser.parseResource(s"$name.routes") match {
+  lazy val routes: List[Route] = EndpointRoutesParser.parseResource(s"$name.routes") match {
     case Right(rs) ⇒ rs
     case Left(err) ⇒ throw RoutesParsingException(err.map(_.toString).mkString(". "))
   }

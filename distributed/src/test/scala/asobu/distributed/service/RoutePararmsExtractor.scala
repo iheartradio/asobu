@@ -1,11 +1,11 @@
 package asobu.distributed.service
 
-import asobu.distributed.service.ActionExtractor.RouteParamsExtractor
+import asobu.distributed.service.DRequestExtractor.RequestParamsExtractor
 import shapeless.HList
 
 /**
  * for convenience in test
  */
-object RouteParamsExtractor {
-  def apply[L <: HList](implicit builder: RouteParamsExtractorBuilder[L]): RouteParamsExtractor[L] = builder()
+object RequestParamsExtractor {
+  def apply[L <: HList](implicit builder: RequestParamsExtractorBuilder[L]): RequestParamsExtractor[L] = builder()
 }

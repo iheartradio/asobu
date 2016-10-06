@@ -2,9 +2,9 @@ package asobu.distributed.service
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service.Action.{DistributedRequest, DistributedResult}
-import asobu.distributed.{EndpointDefinition, Headers, RequestExtractorDefinition}
+import asobu.distributed.service.extractors.DRequestExtractor
+import asobu.distributed.{DRequest, DResult}
+import asobu.distributed.{RequestEnricherDefinition, EndpointDefinition, Headers}
 import asobu.dsl.{ExtractResult, Extractor, ExtractorFunctions}
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc.{Result, Results}
@@ -16,7 +16,7 @@ import scala.reflect._
 import akka.pattern.ask
 import akka.stream.Materializer
 import asobu.dsl.CatsInstances._
-
+import scala.language.implicitConversions
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait Syntax extends ExtractorFunctions {
@@ -31,26 +31,41 @@ trait Syntax extends ExtractorFunctions {
    */
   def handle[T](
     name: String,
-    extrs: ActionExtractor[T]
-  )(bk: (Headers, T) ⇒ Future[DistributedResult]): Action.Aux[T] = {
+    extrs: DRequestExtractor[T]
+  )(bk: (Headers, T) ⇒ Future[DResult]): Action.Aux[T] = {
     val name0 = name
-    new Action {
+    new ActionSimple {
       val name = actionName(name0)
       type TMessage = T
-      val extractors = extrs
+      val extractor = extrs
+      def backend = bk
+    }
+  }
+
+  def handle[T](
+    name: String,
+    enricherDef: RequestEnricherDefinition,
+    extrs: DRequestExtractor[T]
+  )(bk: (Headers, T) ⇒ Future[DResult]): Action.Aux[T] = {
+    val name0 = name
+    new ActionWithEnricher {
+      val enricherDefinition = enricherDef
+      val name = actionName(name0)
+      type TMessage = T
+      val extractor = extrs
       def backend = bk
     }
   }
 
   def from = cats.sequence.sequenceRecord
 
-  val noExtraFields = RequestExtractorDefinition.empty
+  val noExtraFields = Extractor.empty[DRequest]
 
-  def process[T] = ActionExtractor.build[T]
+  def process[T] = DRequestExtractor.build[T]
 
   //the incoming type could be specific but it couldn't be inferred, so it's leaved as Any to avoid the need of respecifying the data type here
   def using(actor: ActorRef)(implicit at: Timeout, ec: ExecutionContext): Extractor[Any, Any] =
-    Extractor.fromFunction { t ⇒
+    Extractor.of { t ⇒
       ExtractResult.right(actor ? t)
     }
 
@@ -77,12 +92,12 @@ trait Syntax extends ExtractorFunctions {
     def >>[C](extractor: Extractor[B, C]): Extractor[A, C] = self.andThen(extractor)
   }
 
-  implicit def toBackend[T](extractor: Extractor[T, Result])(implicit mat: Materializer): (Headers, T) ⇒ Future[DistributedResult] =
+  implicit def toBackend[T](extractor: Extractor[T, Result])(implicit mat: Materializer): (Headers, T) ⇒ Future[DResult] =
     extractor.compose((p: (Headers, T)) ⇒ ExtractResult.pure(p._2))
 
-  implicit def toBackendWHeaders[T](extractor: Extractor[(Headers, T), Result])(implicit mat: Materializer): (Headers, T) ⇒ Future[DistributedResult] =
+  implicit def toBackendWHeaders[T](extractor: Extractor[(Headers, T), Result])(implicit mat: Materializer): (Headers, T) ⇒ Future[DResult] =
     (headers: Headers, t: T) ⇒ extractor.
-      run((headers, t)).fold(identity, identity).flatMap(DistributedResult.from(_))
+      run((headers, t)).fold(identity, identity).flatMap(DResult.from(_))
 
 }
 
