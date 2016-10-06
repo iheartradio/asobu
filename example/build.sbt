@@ -13,8 +13,8 @@ val resolverSetting = resolvers ++= Seq(
 val commonSettings = Seq(
   organization := "asobu",
   version := "2.4.3",
-  scalaVersion := "2.11.7",
-
+  scalaVersion := "2.11.8",
+  addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full),
   // build info
   buildInfoPackage := "meta",
   buildInfoOptions ++= Seq(BuildInfoOption.ToJson),
@@ -42,15 +42,7 @@ lazy val frontend = (project in file("frontend"))
         name := "cluster-play-frontend",
         libraryDependencies ++= (Dependencies.frontend  ++ Dependencies.kanaloa ++ Seq(filters, cache)),
         routesGenerator := InjectedRoutesGenerator,
-        javaOptions ++= Seq(
-            "-Djava.library.path=" + (baseDirectory.value.getParentFile / "backend" / "sigar" ).getAbsolutePath,
-            "-Xms128m", "-Xmx1024m"),
         fork in run := true,
-        mappings in Universal ++= directory(baseDirectory.value.getParentFile / "backend" / "sigar"),
-        bashScriptExtraDefines ++= Seq(
-          """declare -r sigar_dir="$(realpath "${app_home}/../sigar")"""",
-          """addJava "-Djava.library.path=${sigar_dir}""""
-        ),
         commonSettings
     ).dependsOn(api)
 
@@ -61,16 +53,7 @@ lazy val backend = (project in file("backend"))
     .settings(
         name := "cluster-akka-backend",
         libraryDependencies ++= Dependencies.backend,
-        javaOptions ++= Seq(
-            "-Djava.library.path=" + (baseDirectory.value / "sigar").getAbsolutePath,
-            "-Xms128m", "-Xmx1024m"),
-        // this enables custom javaOptions
         fork in run := true,
-        mappings in Universal ++= directory(baseDirectory.value / "sigar"),
-        bashScriptExtraDefines ++= Seq(
-          """declare -r sigar_dir="$(realpath "${app_home}/../sigar")"""",
-          """addJava "-Djava.library.path=${sigar_dir}""""
-        ),
         commonSettings
     ).dependsOn(api)
     

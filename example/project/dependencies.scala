@@ -8,14 +8,14 @@ object Dependencies {
   }
 
   lazy val frontend = common ++ tests ++ playSwagger
-  lazy val backend = common ++ metrics ++ tests ++ play ++ playSwagger
+  lazy val backend = common ++ tests ++ play ++ playSwagger
 
   val play = Seq(
     "com.typesafe.play" %% "play" % Version.play
   )
 
   val playSwagger = Seq(
-    "com.iheart" %% "play-swagger" % "0.5.2",
+    "com.iheart" %% "play-swagger" % "0.5.3",
     "org.webjars" % "swagger-ui" % "2.1.4"
   )
 
@@ -28,10 +28,6 @@ object Dependencies {
     "com.google.guava" % "guava" % "18.0"
   )
 
-  val metrics = Seq(
-    "io.kamon" % "sigar-loader" % "1.6.6-rev002"
-  )
-
   val tests = Seq(
     "org.scalatest" %% "scalatest" % "2.2.4" % "test",
     "org.scalatestplus" %% "play" % "1.4.0-M3" % "test",
@@ -39,7 +35,8 @@ object Dependencies {
   )
 
   val kanaloa = Seq(
-    "com.iheart" %% "kanaloa" % "0.3.0"
+    "com.iheart" %% "kanaloa-core" % "0.4.0"
   )
+
 
 }
