@@ -70,7 +70,7 @@ val commonSettings = Seq(
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
-//    "-Xlint",
+     "-Xlint:-adapted-args,_",
     "-unchecked"
   )
 )
