@@ -32,7 +32,7 @@ trait EndpointHandler {
  * @param bridgeProps a factory that creates the prop for an bridge actor between
  *                    gateway router and actual handling service actor
  */
-sealed abstract class Endpoint(
+abstract class Endpoint(
     val definition: EndpointDefinition,
     bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
 )(
@@ -115,28 +115,6 @@ sealed abstract class Endpoint(
   protected val enricher: RequestEnricher
 }
 
-class EndpointWithEnrichment[T <: RequestEnricherDefinition: Interpreter: ClassTag](
-    definition0: EndpointDefWithEnrichment,
-    bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-)(implicit
-  arf: ActorRefFactory,
-    ec: ExecutionContext) extends Endpoint(definition0, bridgeProps) with EndpointRoute with EndpointHandler {
-
-  lazy val enricher: RequestEnricher = Interpreter.interpret(definition0.enricherDef)
-
-}
-
-class EndpointSimple(
-    definition: EndpointDefinition,
-    bridgeProps: HandlerBridgeProps = HandlerBridgeProps.default
-)(implicit
-  arf: ActorRefFactory,
-    ec: ExecutionContext) extends Endpoint(definition, bridgeProps) with EndpointRoute with EndpointHandler {
-
-  val enricher: RequestEnricher = Extractor(identity)
-
-}
-
 object Endpoint {
   @SerialVersionUID(1L)
   class Prefix private (val value: String) extends AnyVal
@@ -162,9 +140,9 @@ object Endpoint {
   class EndpointFactoryImpl[T <: RequestEnricherDefinition: Interpreter: ClassTag](bridgeProps: HandlerBridgeProps)(implicit
     arf: ActorRefFactory,
       ec: ExecutionContext) extends EndpointFactory {
-    def apply(endpointDef: EndpointDefinition): Endpoint = endpointDef match {
-      case ed: EndpointDefWithEnrichment ⇒ new EndpointWithEnrichment(ed, bridgeProps)
-      case ed: EndpointDefSimple         ⇒ new EndpointSimple(ed, bridgeProps)
+    def apply(endpointDef: EndpointDefinition): Endpoint = new Endpoint(endpointDef, bridgeProps) {
+      override protected val enricher: RequestEnricher =
+        endpointDef.enricherDef.fold[RequestEnricher](Extractor(identity))(Interpreter.interpret[T])
     }
   }
 }

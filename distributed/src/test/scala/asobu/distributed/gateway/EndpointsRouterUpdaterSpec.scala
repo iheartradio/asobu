@@ -27,13 +27,14 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
       become { case _ ⇒ }
     })
 
-    EndpointDefSimple(
+    EndpointDefinition(
       Prefix("/"),
       HttpVerb(verb),
       pathOf(pathParts),
       "call",
       handler.path,
       "test",
+      None,
       version
     )
   }

@@ -28,11 +28,20 @@ trait Action {
     sys.actorOf(Props(new RemoteHandler).withDeploy(Deploy.local), name + "_Handler")
   }
 
+  def enricherDefinition: Option[RequestEnricherDefinition]
+
   def endpointDefinition(
     route: Route,
     prefix: Prefix,
     version: Option[Int]
-  )(implicit sys: ActorSystem): EndpointDefinition
+  )(implicit sys: ActorSystem): EndpointDefinition = EndpointDefinition(
+    prefix,
+    route,
+    handlerActor().path,
+    Cluster(sys).selfRoles.head,
+    enricherDefinition,
+    version
+  )
 
   class RemoteHandler extends Actor {
     import context.dispatcher
@@ -52,41 +61,6 @@ trait Action {
   }
 
   def backend: (Headers, TMessage) ⇒ Future[DResult]
-
-}
-
-trait ActionWithEnricher extends Action {
-  def enricherDefinition: RequestEnricherDefinition
-  def endpointDefinition(
-    route: Route,
-    prefix: Prefix,
-    version: Option[Int]
-  )(implicit sys: ActorSystem): EndpointDefinition = {
-    EndpointDefinition(
-      prefix,
-      route,
-      enricherDefinition,
-      handlerActor().path,
-      Cluster(sys).selfRoles.head,
-      version
-    )
-  }
-}
-
-trait ActionSimple extends Action {
-  def endpointDefinition(
-    route: Route,
-    prefix: Prefix,
-    version: Option[Int]
-  )(implicit sys: ActorSystem): EndpointDefinition = {
-    EndpointDefinition(
-      prefix,
-      route,
-      handlerActor().path,
-      Cluster(sys).selfRoles.head,
-      version
-    )
-  }
 
 }
 

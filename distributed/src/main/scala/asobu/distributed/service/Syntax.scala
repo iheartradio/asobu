@@ -32,23 +32,21 @@ trait Syntax extends ExtractorFunctions {
   def handle[T](
     name: String,
     extrs: DRequestExtractor[T]
-  )(bk: (Headers, T) ⇒ Future[DResult]): Action.Aux[T] = {
-    val name0 = name
-    new ActionSimple {
-      val name = actionName(name0)
-      type TMessage = T
-      val extractor = extrs
-      def backend = bk
-    }
-  }
+  )(bk: (Headers, T) ⇒ Future[DResult]): Action.Aux[T] = handle(name, extrs, None)(bk)
 
   def handle[T](
     name: String,
     enricherDef: RequestEnricherDefinition,
     extrs: DRequestExtractor[T]
+  )(bk: (Headers, T) ⇒ Future[DResult]): Action.Aux[T] = handle(name, extrs, Some(enricherDef))(bk)
+
+  private def handle[T](
+    name: String,
+    extrs: DRequestExtractor[T],
+    enricherDef: Option[RequestEnricherDefinition]
   )(bk: (Headers, T) ⇒ Future[DResult]): Action.Aux[T] = {
     val name0 = name
-    new ActionWithEnricher {
+    new Action {
       val enricherDefinition = enricherDef
       val name = actionName(name0)
       type TMessage = T

@@ -3,7 +3,7 @@ package asobu.distributed.gateway
 import akka.actor._
 import asobu.distributed.gateway.enricher.DisabledInterpreter
 import asobu.distributed.util.{EndpointUtil, TestClusterActorSystem}
-import asobu.distributed.{EndpointDefSimple, util, EndpointDefinition}
+import asobu.distributed.{util, EndpointDefinition}
 import asobu.distributed.gateway.Endpoint.{EndpointFactory, Prefix}
 import asobu.distributed.service.EndpointRoutesParser
 import org.specs2.mock.Mockito
@@ -37,7 +37,9 @@ object EndpointSpec extends PlaySpecification with Mockito {
       prefix,
       route,
       ActorPath.fromString("akka://my-sys/user/service-a/worker1"),
-      "role"
+      "role",
+      None,
+      None
     ): EndpointDefinition
   })
   lazy val ep1: EndpointDefinition = endPoints(0)
