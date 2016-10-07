@@ -4,7 +4,7 @@ import akka.actor.ActorRefFactory
 import asobu.distributed.gateway.Endpoint.EndpointFactory
 import asobu.distributed.gateway.HandlerBridgeProps
 import asobu.distributed.gateway.enricher.DisabledInterpreter
-import asobu.distributed.protocol.{Prefix, EndpointDefinition}
+import asobu.distributed.protocol.{StaticPathPart, PathPart, Prefix, EndpointDefinition}
 import asobu.distributed.service.EndpointRoutesParser
 
 import play.routes.compiler.{StaticPart, PathPattern, Route}
@@ -39,6 +39,5 @@ object EndpointUtil {
     EndpointFactory[Nothing](HandlerBridgeProps.default)
   }
 
-  def pathOf(pathParts: List[String] = List("abc", "ep1")): PathPattern =
-    PathPattern(pathParts.map(StaticPart))
+  def pathOf(pathParts: List[String] = List("abc", "ep1")): Seq[PathPart] = pathParts.map(StaticPathPart)
 }

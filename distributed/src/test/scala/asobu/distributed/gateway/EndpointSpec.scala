@@ -2,7 +2,7 @@ package asobu.distributed.gateway
 
 import akka.actor._
 import asobu.distributed.gateway.enricher.DisabledInterpreter
-import asobu.distributed.protocol.{Prefix, EndpointDefinition}
+import asobu.distributed.protocol.{HandlerAddress, Prefix, EndpointDefinition}
 import asobu.distributed.util.{EndpointUtil, TestClusterActorSystem}
 import asobu.distributed.util
 import asobu.distributed.gateway.Endpoint.EndpointFactory
@@ -37,7 +37,7 @@ object EndpointSpec extends PlaySpecification with Mockito {
     EndpointDefinition(
       prefix,
       route,
-      ActorPath.fromString("akka://my-sys/user/service-a/worker1"),
+      HandlerAddress("akka://my-sys/user/service-a/worker1"),
       "role",
       None,
       None

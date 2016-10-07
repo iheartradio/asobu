@@ -4,8 +4,7 @@ import java.io.InvalidClassException
 
 import akka.actor.{ActorRef, ExtendedActorSystem, UnhandledMessage}
 import asobu.distributed._
-import asobu.distributed.protocol.Prefix
-import asobu.distributed.protocol.EndpointDefinition
+import asobu.distributed.protocol.{Verb, Prefix, EndpointDefinition}
 import asobu.distributed.util.{EndpointUtil, MockRoute, SpecWithActorCluster}
 import akka.actor.ActorDSL._
 import akka.cluster.Cluster
@@ -18,6 +17,7 @@ import play.routes.compiler.HttpVerb
 class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
   import scala.concurrent.ExecutionContext.Implicits.global
   import EndpointUtil._
+  import EndpointDefinition._
 
   def mockEndpointDef(
     version: Option[Int],
@@ -30,10 +30,10 @@ class EndpointsRouterUpdaterSpec extends SpecWithActorCluster {
 
     EndpointDefinition(
       Prefix("/"),
-      HttpVerb(verb),
+      Verb(verb),
       pathOf(pathParts),
       "call",
-      handler.path,
+      handler.path.handlerAddress,
       "test",
       None,
       version

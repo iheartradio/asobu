@@ -20,6 +20,7 @@ import asobu.dsl.CatsInstances._
 import scala.concurrent.{ExecutionContext, Future, duration}, duration._
 import scala.reflect.ClassTag
 import protocol._
+import EndpointDefinition._
 
 trait EndpointRoute {
   def unapply(requestHeader: Request[AnyContent]): Option[RouteParams]
@@ -43,16 +44,15 @@ abstract class Endpoint(
     ec: ExecutionContext
 ) extends EndpointRoute with EndpointHandler {
   implicit val ak: Timeout = 10.minutes //todo: find the right place to configure this
-  import definition._
 
   private val handlerRef: ActorRef = {
-    val props = bridgeProps(handlerPath, definition.clusterRole)
+    val props = bridgeProps(definition.handlerPath, definition.clusterRole)
     //a random name allows some redundancy in this router.
-    val bridgeActorName = definition.clusterRole + handlerActor.name.replace("$", "") + ThreadLocalRandom.current().nextInt(1000)
+    val bridgeActorName = definition.clusterRole + definition.handlerActorPath.name.replace("$", "") + ThreadLocalRandom.current().nextInt(1000)
     arf.actorOf(props, bridgeActorName)
   }
 
-  def shutdown(): Unit = if (handlerRef != handlerActor) handlerRef ! PoisonPill
+  def shutdown(): Unit = handlerRef ! PoisonPill
 
   def unapply(request: Request[AnyContent]): Option[RouteParams] = {
     // queryString's parser parses an empty string as Map("" -> Seq()), so we replace query strings made up of all empty values
@@ -72,7 +72,6 @@ abstract class Endpoint(
   // or have distributed request have the reply to Address and then send it to handlerRef as the implicit sender.
   def handle(request: GateWayRequest): Future[Result] = {
     import akka.pattern.ask
-    //    import ExecutionContext.Implicits.global
 
     val dRequestER: ExtractResult[DRequest] = {
       val pathParamsErrors = request.routeParam.path.collect {
@@ -105,8 +104,8 @@ abstract class Endpoint(
   }
 
   private lazy val routeExtractors: ParamsExtractor = {
-    val localParts = if (path.parts.nonEmpty) StaticPart(defaultPrefix) +: path.parts else Nil
-    routing.Route(verb.value, routing.PathPattern(toCPart(StaticPart(prefix.value) +: localParts)))
+    val localParts = if (definition.path.nonEmpty) StaticPart(definition.defaultPrefix) +: definition.pathPattern.parts else Nil
+    routing.Route(definition.verb.value, routing.PathPattern(toCPart(StaticPart(definition.prefix.value) +: localParts)))
   }
 
   private def toCPart(parts: Seq[PathPart]): Seq[routing.PathPart] = parts map {

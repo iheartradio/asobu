@@ -2,73 +2,94 @@ package asobu.distributed.protocol
 
 import akka.actor.ActorPath
 import asobu.distributed.RequestEnricherDefinition
-import asobu.distributed.protocol.Prefix
-import play.routes.compiler.{HttpVerb, PathPattern, Route}
+import play.routes.compiler._
 import EndpointDefinition._
 
-@SerialVersionUID(2L)
+@SerialVersionUID(1L)
 case class EndpointDefinition(
-    prefix: Prefix,
-    verb: HttpVerb,
-    path: PathPattern,
-    call: String,
-    handlerActor: ActorPath,
-    clusterRole: String,
-    enricherDef: Option[RequestEnricherDefinition] = None,
-    version: Option[Int] = None
-) {
+  prefix: Prefix,
+  verb: Verb,
+  path: Seq[PathPart],
+  call: String,
+  handlerAddress: HandlerAddress,
+  clusterRole: String,
+  enricherDef: Option[RequestEnricherDefinition] = None,
+  version: Option[Int] = None
+)
 
-  val defaultPrefix: String = {
-    if (prefix.value.endsWith("/")) "" else "/"
-  }
+@SerialVersionUID(1L)
+case class Verb(value: String)
 
-  val documentation: (String, String, String) = {
-    val localPath = if (path.parts.isEmpty) "" else defaultPrefix + path.toString
-    val pathInfo = prefix.value + localPath
-    (verb.toString, pathInfo, call)
-  }
+sealed trait PathPart
 
-  def handlerPath = handlerActor.toStringWithoutAddress
+@SerialVersionUID(1L)
+case class StaticPathPart(value: String) extends PathPart
 
-  val id: String = {
-    val (verb, path, _) = documentation
-    s"$verb $path"
-  }
+@SerialVersionUID(1L)
+case class DynamicPathPart(name: String, constraint: String, encode: Boolean) extends PathPart
 
-}
+@SerialVersionUID(1L)
+case class HandlerAddress(value: String) extends AnyVal
+
+@SerialVersionUID(1L)
+class Prefix private (val value: String) extends AnyVal
 
 object EndpointDefinition {
 
-  case class Verb(value: String)
+  implicit class EndpointDefinitionOps(val ed: EndpointDefinition) {
+    import ed._
+    lazy val defaultPrefix: String = {
+      if (prefix.value.endsWith("/")) "" else "/"
+    }
 
-  sealed trait PathPath
-  case class StaticPathPart(value: String) extends PathPath
-  case class DynamicPathPart(name: String, constraint: String, encode: Boolean) extends PathPath
-  case class HandlerAddress(value: String) extends AnyVal
+    lazy val pathPattern = PathPattern(path.map {
+      case StaticPathPart(v)        ⇒ StaticPart(v)
+      case DynamicPathPart(n, c, e) ⇒ DynamicPart(n, c, e)
+    })
+
+    lazy val documentation: (String, String, String) = {
+      val localPath = if (pathPattern.parts.isEmpty) "" else defaultPrefix + pathPattern.toString
+      val pathInfo = prefix.value + localPath
+      (verb.toString, pathInfo, call)
+    }
+
+    def handlerActorPath = ActorPath.fromString(handlerAddress.value)
+
+    def handlerPath = handlerActorPath.toStringWithoutAddress
+
+    lazy val id: String = {
+      val (verb, path, _) = documentation
+      s"$verb $path"
+    }
+  }
+
+  implicit class actorPathToHandlerAddress(actorPath: ActorPath) {
+    def handlerAddress: HandlerAddress = HandlerAddress(actorPath.toStringWithAddress(actorPath.address))
+  }
 
   def apply(
     prefix: Prefix,
     route: Route,
-    handlerActor: ActorPath,
+    handlerAddress: HandlerAddress,
     clusterRole: String,
     enricherDef: Option[RequestEnricherDefinition],
     version: Option[Int]
   ): EndpointDefinition =
     EndpointDefinition(
       prefix,
-      route.verb,
-      route.path,
+      Verb(route.verb.value),
+      route.path.parts.map {
+        case StaticPart(v)        ⇒ StaticPathPart(v)
+        case DynamicPart(n, c, e) ⇒ DynamicPathPart(n, c, e)
+      },
       route.call.toString(),
-      handlerActor,
+      handlerAddress,
       clusterRole,
       enricherDef,
       version
     )
 
 }
-
-@SerialVersionUID(1L)
-class Prefix private (val value: String) extends AnyVal
 
 object Prefix {
   val root = apply("/")
