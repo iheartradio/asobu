@@ -3,7 +3,7 @@ package asobu.distributed.service
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import asobu.distributed.service.extractors.DRequestExtractor
-import asobu.distributed.{DRequest, DResult}
+import asobu.distributed.protocol.{DResult, DRequest}
 import asobu.distributed.{RequestEnricherDefinition, Headers}
 import asobu.dsl.{ExtractResult, Extractor, ExtractorFunctions}
 import play.api.libs.json.{Json, Reads, Writes}

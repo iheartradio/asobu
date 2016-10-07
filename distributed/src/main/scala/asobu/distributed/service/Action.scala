@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import asobu.distributed.protocol.{HandlerAddress, EndpointDefinition, Prefix}
 import asobu.distributed.service.extractors.DRequestExtractor
-import asobu.distributed.{DResult, DRequest}
+import asobu.distributed.protocol.{DResult, DRequest}
 import asobu.distributed._
 import play.api.http.HttpEntity
 import play.api.mvc.{AnyContent, ResponseHeader, Result}

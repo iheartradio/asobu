@@ -3,7 +3,7 @@ package cross
 import javax.inject.{Inject, Singleton}
 
 import api.{Authenticated, ExampleEnricher}
-import asobu.distributed.DRequest
+import asobu.distributed.protocol.DRequest
 import asobu.distributed.gateway.RequestEnricher
 import asobu.distributed.gateway.RequestEnricher
 import asobu.distributed.gateway.enricher.{RequestEnricher, Interpreter}

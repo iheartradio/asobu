@@ -1,7 +1,7 @@
 package asobu.distributed.service
 
 import asobu.distributed.service.extractors.DRequestExtractor
-import asobu.distributed.{RequestParams, DRequest}
+import asobu.distributed.protocol.{RequestParams, DRequest}
 import asobu.distributed.service.DRequestExtractor.{RequestParamsExtractor, BodyExtractor}
 import asobu.dsl._
 import asobu.dsl.extractors.JsonBodyExtractor

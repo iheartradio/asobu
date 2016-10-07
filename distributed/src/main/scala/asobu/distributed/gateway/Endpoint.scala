@@ -6,7 +6,7 @@ import akka.actor.{PoisonPill, ActorRef, ActorRefFactory}
 import akka.routing.RoundRobinGroup
 import akka.util.Timeout
 import asobu.distributed.protocol.EndpointDefinition
-import asobu.distributed.{RequestParams, DRequest, DResult}
+import asobu.distributed.protocol.{RequestParams, DRequest, DResult}
 import asobu.distributed.gateway.enricher.Interpreter
 import asobu.distributed._
 import asobu.dsl.{Extractor, ExtractResult}
@@ -95,7 +95,7 @@ abstract class Endpoint(
       drRaw ← dRequestER
       dr ← enricher(drRaw)
       result ← ExtractResult.fromEitherF((handlerRef ? dr).map {
-        case r: DResult ⇒ Right(r.toResult) //todo
+        case r: DResult ⇒ Right(DResult.toResult(r)) //todo
         case m          ⇒ Left(InternalServerError(s"Unsupported result from backend ${m.getClass}"))
       })
     } yield result

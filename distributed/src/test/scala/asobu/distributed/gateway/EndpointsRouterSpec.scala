@@ -2,7 +2,7 @@ package asobu.distributed.gateway
 
 import akka.testkit.TestProbe
 import asobu.distributed.protocol.EndpointDefinition
-import asobu.distributed.{DRequest, DResult}
+import asobu.distributed.protocol.{DResult, DRequest}
 import asobu.distributed.util.{EndpointUtil, SpecWithActorCluster}
 import asobu.distributed.protocol.Prefix
 import asobu.distributed.service.EndpointRoutesParser

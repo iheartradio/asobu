@@ -1,6 +1,6 @@
 package asobu.distributed.service.extractors
 
-import asobu.distributed.DRequest
+import asobu.distributed.protocol.DRequest
 import asobu.dsl._
 import asobu.dsl.util.Read
 import CatsInstances._

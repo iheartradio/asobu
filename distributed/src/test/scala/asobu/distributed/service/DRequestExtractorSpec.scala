@@ -1,7 +1,7 @@
 package asobu.distributed.service
 
 import asobu.distributed.service.extractors.DRequestExtractor
-import asobu.distributed.{RequestParams, DRequest, util}
+import asobu.distributed.protocol.{RequestParams, DRequest}
 import asobu.distributed.util.SerializableTest
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification

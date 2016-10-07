@@ -2,7 +2,7 @@ package asobu.distributed.gateway.enricher
 
 import javax.inject.Inject
 
-import asobu.distributed.DRequest
+import asobu.distributed.protocol.DRequest
 import asobu.distributed.RequestEnricherDefinition
 import asobu.distributed.RequestEnricherDefinition.{OrElse, AndThen}
 import asobu.distributed.gateway._

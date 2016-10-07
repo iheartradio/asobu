@@ -7,7 +7,7 @@ import akka.util.Timeout
 import asobu.distributed.protocol.Prefix
 import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.service.DRequestExtractorSpec._
-import asobu.distributed.{DRequest, RequestParams, util}
+import asobu.distributed.protocol.{DRequest, RequestParams}
 import asobu.distributed.util.{MockRoute, ScopeWithActor, SerializableTest, SpecWithActorCluster}
 
 import asobu.dsl.extractors.JsonBodyExtractor

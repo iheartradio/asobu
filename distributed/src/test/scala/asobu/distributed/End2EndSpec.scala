@@ -12,7 +12,7 @@ import asobu.distributed.util.SpecWithActorCluster
 import asobu.dsl.{ExtractResult, Extractor, RequestExtractor}
 import play.api.libs.json.{JsNumber, JsString, Json}
 import play.api.mvc.Results._
-
+import asobu.distributed.protocol.{DRequest, DResult}
 import concurrent.duration._
 
 import scala.util.Random

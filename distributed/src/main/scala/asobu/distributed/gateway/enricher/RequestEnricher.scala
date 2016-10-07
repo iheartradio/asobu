@@ -1,6 +1,6 @@
 package asobu.distributed.gateway.enricher
 
-import asobu.distributed.DRequest
+import asobu.distributed.protocol.DRequest
 import asobu.distributed.gateway.RequestEnricher
 import asobu.dsl.{ExtractResult, Extractor}
 import Extractor._

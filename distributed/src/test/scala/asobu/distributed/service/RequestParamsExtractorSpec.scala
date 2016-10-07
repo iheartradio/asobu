@@ -1,6 +1,6 @@
 package asobu.distributed.service
 
-import asobu.distributed.RequestParams
+import asobu.distributed.protocol.RequestParams
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import shapeless._
