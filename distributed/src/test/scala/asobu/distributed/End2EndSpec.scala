@@ -11,17 +11,18 @@ import asobu.distributed.service._
 import asobu.distributed.util.SpecWithActorCluster
 import asobu.dsl.{ExtractResult, Extractor, RequestExtractor}
 import play.api.libs.json.{JsNumber, JsString, Json}
+import play.api.mvc.RawBuffer
 import play.api.mvc.Results._
 import asobu.distributed.protocol.{DRequest, DResult}
 import concurrent.duration._
 
 import scala.util.Random
-import play.api.test.{FakeRequest, PlaySpecification}
+import play.api.test.{FakeHeaders, FakeRequest, PlaySpecification}
 import asobu.dsl.CatsInstances._
 import scala.concurrent.{ExecutionContext, Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
+class End2EndSpec extends PlaySpecification with FakeRequests with SpecWithActorCluster {
 
   import End2EndSpec._
 
@@ -40,7 +41,7 @@ class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
   awaitNonEmptyRoutes(5.seconds)
 
   "GET /api/cats/:catId returns OK Json response" >> {
-    val req = FakeRequest(GET, "/api/cats/3")
+    val req = request(GET, "/api/cats/3")
     val resp = gatewayAction(req)
     status(resp) === OK
     (contentAsJson(resp) \ "id").get === JsString("3")
@@ -49,7 +50,7 @@ class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
   }
 
   "GET /api/dogs/:name?birthYear=2012 returns OK Json response" >> {
-    val req = FakeRequest(GET, "/api/dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
+    val req = request(GET, "/api/dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
     val resp = gatewayAction(req)
     status(resp) === OK
     (contentAsJson(resp) \ "age").get === JsNumber(2020 - 2012)
@@ -58,37 +59,37 @@ class End2EndSpec extends PlaySpecification with SpecWithActorCluster {
 
   }
   "GET /api/auth-dogs/ without userid in header returns Unauthorized response" >> {
-    val req = FakeRequest(GET, "/api/auth-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
+    val req = request(GET, "/api/auth-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
     val resp = gatewayAction(req)
     status(resp) === UNAUTHORIZED
   }
 
   "GET /api/perm-dogs/ without userid in header returns Unauthorized response" >> {
-    val req = FakeRequest(GET, "/api/perm-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
+    val req = request(GET, "/api/perm-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian")
     val resp = gatewayAction(req)
     status(resp) === UNAUTHORIZED
   }
 
   "GET /api/no-perm-dogs/ with userid in header but not correct permission returns Unauthorized response" >> {
-    val req = FakeRequest(GET, "/api/no-perm-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian", "user_token" → "323sdf230@098d23")
+    val req = request(GET, "/api/no-perm-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian", "user_token" → "323sdf230@098d23")
     val resp = gatewayAction(req)
     status(resp) === UNAUTHORIZED
   }
 
   "GET /api/perm-dogs/ with userid in header and correct permission returns OK response" >> {
-    val req = FakeRequest(GET, "/api/perm-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian", "user_token" → "323sdf230@098d23")
+    val req = request(GET, "/api/perm-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian", "user_token" → "323sdf230@098d23")
     val resp = gatewayAction(req)
     status(resp) === OK
   }
 
   "GET /api/auth-dogs/ with userid in header returns Ok response" >> {
-    val req = FakeRequest(GET, "/api/auth-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian", "user_token" → "323sdf230@098d23")
+    val req = request(GET, "/api/auth-dogs/tom?birthYear=2012").withHeaders("owner" → "Brian", "user_token" → "323sdf230@098d23")
     val resp = gatewayAction(req)
     status(resp) === OK
   }
 
   "GET /api/human/:catId returns 404" >> {
-    val req = FakeRequest(GET, "/api/human/3")
+    val req = request(GET, "/api/human/3")
     val resp = gatewayAction(req)
     status(resp) === NOT_FOUND
   }

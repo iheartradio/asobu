@@ -11,7 +11,7 @@ import cats.sequence.RecordSequencer
 import shapeless.ops.hlist.Prepend
 import asobu.dsl.util.RecordOps.{FieldKV, FieldKVs}
 import cats.data.{Xor, Kleisli}
-import play.api.libs.json.{Reads, Json}
+import play.api.libs.json.{JsError, JsSuccess, Reads, Json}
 import play.core.routing.RouteParams
 import shapeless.labelled.FieldType
 import shapeless.ops.hlist.Mapper
@@ -25,68 +25,51 @@ import Extractor._
 import scala.annotation.implicitNotFound
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 object DRequestExtractor extends ExtractorFunctions {
 
   type RequestParamsExtractor[T <: HList] = Extractor[RequestParams, T]
 
-  type BodyExtractor[T] = Extractor[AnyContent, T]
+  type BodyExtractor[T] = Extractor[Array[Byte], T]
 
   class builder[TMessage] {
-    def apply[LParams <: HList, LExtra <: HList, LBody <: HList, TRepr <: HList](
-      magnet: BuilderMagnet[LExtra, LBody]
+    def apply[LParams <: HList, LExtra <: HList, TRepr <: HList](
+      extra: DRequestExtractor[LExtra]
     )(implicit
       gen: LabelledGeneric.Aux[TMessage, TRepr],
-      r: RestOf2.Aux[TRepr, LExtra, LBody, LParams],
-      combineTo: Combine3To[LExtra, LParams, LBody, TRepr],
+      r: RestOf.Aux[TRepr, LExtra, LParams],
+      combineTo: CombineTo[LExtra, LParams, TRepr],
       rpeb: RequestParamsExtractorBuilder[LParams],
       ex: ExecutionContext): DRequestExtractor[TMessage] = (dr: DRequest) ⇒ {
       for {
-        extras ← magnet.extraExtractor(dr)
+        extras ← extra(dr)
         params ← rpeb()(dr.requestParams)
-        body ← magnet.bodyExtractor.run(dr.body)
       } yield {
-        val repr = combineTo(extras, params, body)
+        val repr = combineTo(extras, params)
         gen.from(repr)
       }
     }
+
+    def apply[TRepr <: HList]()(implicit
+      gen: LabelledGeneric.Aux[TMessage, TRepr],
+      rpeb: RequestParamsExtractorBuilder[TRepr],
+      ex: ExecutionContext): DRequestExtractor[TMessage] = rpeb().contramap((_: DRequest).requestParams) map (gen.from)
+
   }
 
   def build[TMessage] = new builder[TMessage]
 
-  /**
-   * Magnet pattern for overloads
-   *
-   * @param extraExtractor
-   * @param bodyExtractor
-   * @tparam LExtra
-   * @tparam LBody
-   */
-  sealed case class BuilderMagnet[LExtra <: HList, LBody <: HList](
-    extraExtractor: Extractor[DRequest, LExtra],
-    bodyExtractor: BodyExtractor[LBody]
-  )
-
-  object BuilderMagnet {
-    implicit def fromBoth[LExtra <: HList, LBody <: HList](tuple: (Extractor[DRequest, LExtra], BodyExtractor[LBody])): BuilderMagnet[LExtra, LBody] = BuilderMagnet(tuple._1, tuple._2)
-
-    implicit def fromBody[LBody <: HList](
-      bodyExtractor: BodyExtractor[LBody]
-    ): BuilderMagnet[HNil, LBody] = BuilderMagnet(empty[DRequest], bodyExtractor)
-
-    implicit def fromExtra[LExtra <: HList](
-      extraExtractor: Extractor[DRequest, LExtra]
-    ): BuilderMagnet[LExtra, HNil] = BuilderMagnet(extraExtractor, BodyExtractor.empty)
-
-    implicit def fromUnit(u: Unit): BuilderMagnet[HNil, HNil] = BuilderMagnet(empty[DRequest], BodyExtractor.empty)
-
-  }
-
 }
 
-object BodyExtractor {
+object BodyExtractors {
   val empty = Extractor.empty[AnyContent]
-  def json[T: Reads]: BodyExtractor[T] = Extractor.of(JsonBodyExtractor.extractBody[T])
+  def json[T: Reads]: DRequestExtractor[T] = Extractor.ofEither[DRequest, T]((req: DRequest) ⇒
+    Try(Json.parse(req.body)).map(_.validate[T]) match {
+      case Success(JsSuccess(t, _)) ⇒ Right(t)
+      case Success(JsError(errors)) ⇒ Left(BadRequest(errors.seq.mkString(";")))
+      case Failure(e)               ⇒ Left(BadRequest(s"Failed to parse json $e"))
+    })
 }
 
 @implicitNotFound("Cannot construct RouteParamsExtractor out of ${L}")

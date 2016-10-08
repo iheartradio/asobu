@@ -33,6 +33,15 @@ case class AMixedController(factorialBackend: ActorRef, studentBackend: ActorRef
           respond(r => Ok(r.result.toString))
       ) ,
 
+    handle("ep2",
+      process[Student](
+        fromJsonBody[Student]
+      ))(
+        using(studentBackend).
+          expect[StudentService.Grade] >>
+          respondJson(Ok)
+      ),
+
     handle("ep3",
       Authenticated,
       process[Student](

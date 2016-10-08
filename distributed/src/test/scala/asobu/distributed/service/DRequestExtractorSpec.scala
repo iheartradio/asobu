@@ -1,5 +1,6 @@
 package asobu.distributed.service
 
+import asobu.distributed.FakeRequests
 import asobu.distributed.service.extractors.DRequestExtractor
 import asobu.distributed.protocol.{RequestParams, DRequest}
 import asobu.distributed.util.SerializableTest
@@ -16,7 +17,7 @@ import Extractor._
 import extractors.DRequestExtractors._
 import scala.concurrent.duration._
 
-object DRequestExtractorSpec extends Specification with SerializableTest {
+object DRequestExtractorSpec extends Specification with FakeRequests with SerializableTest {
   import asobu.dsl.DefaultExtractorImplicits._
 
   case class MyMessage(foo: String, bar: Int, bar2: Boolean)
@@ -27,11 +28,11 @@ object DRequestExtractorSpec extends Specification with SerializableTest {
 
     val reqExtractor = compose(foo = header[String]("foo_h"), bar2 = header[Boolean]("bar2"))
 
-    val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val extractor: DRequestExtractor[MyMessage] = DRequestExtractor.build[MyMessage](reqExtractor, bodyExtractor)
+    val bodyExtractor = BodyExtractors.json[MyMessageBody].allFields
+    val extractor: DRequestExtractor[MyMessage] = DRequestExtractor.build[MyMessage](reqExtractor and bodyExtractor)
 
     val params = RequestParams.empty
-    val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV", "bar2" → "true")
+    val req = request().withBody(rawJson(Json.obj("bar" → JsNumber(3)))).withHeaders("foo_h" → "foV", "bar2" → "true")
 
     val result = extractor.run(DRequest(params, req))
     result.toEither must beRight(MyMessage("foV", 3, true)).awaitFor(3.seconds)
@@ -40,11 +41,11 @@ object DRequestExtractorSpec extends Specification with SerializableTest {
 
   "can build extractor correctly with query params to extract" >> { implicit ev: ExecutionEnv ⇒
     val reqExtractor = compose(foo = header[String]("foo_h"))
-    val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val actionExtractor = DRequestExtractor.build[MyMessage](reqExtractor, bodyExtractor)
+    val bodyExtractor = BodyExtractors.json[MyMessageBody].allFields
+    val actionExtractor = DRequestExtractor.build[MyMessage](reqExtractor and bodyExtractor)
 
     val params = RequestParams(Map.empty, Map("bar2" → Seq("true")))
-    val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV")
+    val req = request().withBody(rawJson(Json.obj("bar" → JsNumber(3)))).withHeaders("foo_h" → "foV")
 
     val result = actionExtractor.run(DRequest(params, req))
     //    val expected = Record(bar2 = true, foo = "foV")
@@ -54,11 +55,11 @@ object DRequestExtractorSpec extends Specification with SerializableTest {
 
   "can build extractor correctly with path param to extract" >> { implicit ev: ExecutionEnv ⇒
     val reqExtractor = compose(foo = header[String]("foo_h"))
-    val bodyExtractor = BodyExtractor.json[MyMessageBody].allFields
-    val actionExtractor = DRequestExtractor.build[MyMessage](reqExtractor, bodyExtractor)
+    val bodyExtractor = BodyExtractors.json[MyMessageBody].allFields
+    val actionExtractor = DRequestExtractor.build[MyMessage](reqExtractor and bodyExtractor)
 
     val params = RequestParams(Map("bar2" → "true"), Map.empty)
-    val req: Request[AnyContent] = FakeRequest().withJsonBody(Json.obj("bar" → JsNumber(3))).withHeaders("foo_h" → "foV")
+    val req = request().withBody(rawJson(Json.obj("bar" → JsNumber(3)))).withHeaders("foo_h" → "foV")
 
     val result = actionExtractor.run(DRequest(params, req))
     //    val expected = Record(bar2 = true, foo = "foV")
@@ -71,7 +72,7 @@ object DRequestExtractorSpec extends Specification with SerializableTest {
     val actionExtractor = DRequestExtractor.build[MyMessage](reqExtractor)
 
     val params = RequestParams(Map.empty, Map("bar2" → Seq("true"), "bar" → Seq("3")))
-    val req: Request[AnyContent] = FakeRequest().withHeaders("foo_h" → "foV")
+    val req = request().withHeaders("foo_h" → "foV")
 
     val result = actionExtractor.run(DRequest(params, req))
     result.toEither must beRight(MyMessage("foV", 3, true)).awaitFor(3.seconds)
@@ -83,7 +84,7 @@ object DRequestExtractorSpec extends Specification with SerializableTest {
 
     val params = RequestParams(Map.empty, Map("bar2" → Seq("true"), "bar" → Seq("3"), "foo" → Seq("foV")))
 
-    val result = actionExtractor.run(DRequest(params, FakeRequest()))
+    val result = actionExtractor.run(DRequest(params, request()))
     val expected = MyMessage(foo = "foV", bar = 3, bar2 = true)
 
     result.toEither must beRight(expected).awaitFor(3.seconds)

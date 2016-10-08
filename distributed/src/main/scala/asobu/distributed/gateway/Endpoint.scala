@@ -11,7 +11,7 @@ import asobu.distributed.gateway.enricher.Interpreter
 import asobu.distributed._
 import asobu.dsl.{Extractor, ExtractResult}
 import play.api.mvc.Results._
-import play.api.mvc.{Result, AnyContent, Request}
+import play.api.mvc._
 import play.core.routing
 import play.core.routing.Route.ParamsExtractor
 import play.core.routing.RouteParams
@@ -23,7 +23,7 @@ import protocol._
 import EndpointDefinition._
 
 trait EndpointRoute {
-  def unapply(requestHeader: Request[AnyContent]): Option[RouteParams]
+  def unapply(requestHeader: Request[RawBuffer]): Option[RouteParams]
 }
 
 trait EndpointHandler {
@@ -54,7 +54,7 @@ abstract class Endpoint(
 
   def shutdown(): Unit = handlerRef ! PoisonPill
 
-  def unapply(request: Request[AnyContent]): Option[RouteParams] = {
+  def unapply(request: Request[RawBuffer]): Option[RouteParams] = {
     // queryString's parser parses an empty string as Map("" -> Seq()), so we replace query strings made up of all empty values
     // with an empty map
     // https://github.com/playframework/playframework/blob/master/framework/src/play/src/main/scala/play/core/parsers/FormUrlEncodedParser.scala#L23
@@ -85,8 +85,7 @@ abstract class Endpoint(
           val pathParams = request.routeParam.path.collect { case (key, Right(v)) ⇒ (key, v) }
           DRequest(
             RequestParams(pathParams, request.routeParam.queryString),
-            request.request.body,
-            request.request.headers.headers
+            request.request
           )
         }
     }

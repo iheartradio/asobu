@@ -5,7 +5,7 @@ import akka.util.ByteString
 import asobu.distributed.Headers
 
 import play.api.http.HttpEntity
-import play.api.mvc.{ResponseHeader, Result, Request, AnyContent}
+import play.api.mvc._
 
 import scala.concurrent.Future
 
@@ -15,7 +15,7 @@ case class HttpStatus(code: Int) extends AnyVal
 @SerialVersionUID(1L)
 case class DRequest(
   requestParams: RequestParams,
-  body: AnyContent,
+  body: Array[Byte],
   headers: Headers = Nil
 )
 
@@ -33,8 +33,14 @@ case class DResult(
 )
 
 object DRequest {
-  def apply(params: RequestParams, request: Request[AnyContent]): DRequest =
-    DRequest(params, request.body, request.headers.headers)
+  def apply(params: RequestParams, request: Request[RawBuffer]): DRequest = {
+    DRequest(
+      params,
+      request.body.asBytes().fold(Array[Byte]())(_.toArray), //todo: evaluate the performance impact of copying the whole body in memory
+      request.headers.headers
+    )
+  }
+
 }
 
 object RequestParams {

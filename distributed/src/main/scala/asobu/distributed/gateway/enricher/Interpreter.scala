@@ -1,13 +1,9 @@
 package asobu.distributed.gateway.enricher
 
-import javax.inject.Inject
-
-import asobu.distributed.protocol.DRequest
 import asobu.distributed.RequestEnricherDefinition
 import asobu.distributed.RequestEnricherDefinition.{OrElse, AndThen}
 import asobu.distributed.gateway._
 import asobu.dsl.Extractor._
-import asobu.dsl.{ExtractResult, Extractor, RequestExtractor}
 import play.api.mvc.{Request, AnyContent, Results}, Results.InternalServerError
 
 import scala.concurrent.ExecutionContext

@@ -1,6 +1,7 @@
 package asobu.distributed.gateway
 
 import akka.testkit.TestProbe
+import asobu.distributed.FakeRequests
 import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.protocol.{DResult, DRequest}
 import asobu.distributed.util.{EndpointUtil, SpecWithActorCluster}
@@ -14,7 +15,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import EndpointDefinition._
 
-class EndpointsRouterSpec extends SpecWithActorCluster {
+class EndpointsRouterSpec extends SpecWithActorCluster with FakeRequests {
 
   import play.api.http.HttpVerbs._
   val routeString =
@@ -42,13 +43,13 @@ class EndpointsRouterSpec extends SpecWithActorCluster {
   Await.result(router.update(endpoints), 3.seconds)
 
   "route to worker1" >> {
-    router.handle(FakeRequest(GET, "/ep1/a"))
+    router.handle(request(GET, "/ep1/a"))
     val rp = worker1.expectMsgType[DRequest].requestParams
     rp.pathParams should beEmpty
   }
 
   "route to worker2" >> {
-    router.handle(FakeRequest(GET, "/ep2/b"))
+    router.handle(request(GET, "/ep2/b"))
     val rp = worker2.expectMsgType[DRequest].requestParams
     rp.queryString should beEmpty
   }

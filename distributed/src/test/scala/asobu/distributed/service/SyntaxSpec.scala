@@ -4,6 +4,7 @@ import akka.actor.{Actor, Props}
 import akka.actor.Actor.Receive
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import asobu.distributed.FakeRequests
 import asobu.distributed.protocol.Prefix
 import asobu.distributed.protocol.EndpointDefinition
 import asobu.distributed.service.DRequestExtractorSpec._
@@ -24,7 +25,7 @@ import play.api.test.FakeRequest
 import cats.instances.future._
 import concurrent.duration._
 
-class SyntaxSpec extends SpecWithActorCluster with SerializableTest with ExecutionEnvironment {
+class SyntaxSpec extends SpecWithActorCluster with FakeRequests with SerializableTest with ExecutionEnvironment {
   import asobu.distributed.service.SyntaxSpec._
   implicit val format = Json.format[Input]
   import asobu.dsl.DefaultExtractorImplicits._
@@ -73,8 +74,8 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
       val action = handle(
         "anEndpoint",
         process[LargeInput](
-          from(flagInHeader = header[Boolean]("someheaderField")),
-          fromJsonBody[Input]
+          from(flagInHeader = header[Boolean]("someheaderField")) and
+            fromJsonBody[Input]
         )
       )(using(testBE).expect[Output] >> respond(Ok))
 
@@ -83,7 +84,7 @@ class SyntaxSpec extends SpecWithActorCluster with SerializableTest with Executi
       endpoint must beSerializable
 
       val params = RequestParams(Map.empty, Map.empty)
-      val req = FakeRequest().withHeaders("someheaderField" → "true").withJsonBody(Json.obj("a" → JsString("avalue"), "b" → JsNumber(10)))
+      val req = request().withHeaders("someheaderField" → "true").withBody(rawJson(Json.obj("a" → JsString("avalue"), "b" → JsNumber(10))))
 
       val dRequest = DRequest(params, req)
 

@@ -69,7 +69,7 @@ trait Syntax extends ExtractorFunctions {
 
   def fromJsonBody[T: Reads: LabelledGeneric] = jsonBody.allFields
 
-  def jsonBody[T: Reads] = BodyExtractor.json[T]
+  def jsonBody[T: Reads] = BodyExtractors.json[T]
 
   def respond[A](result: Result): Extractor[A, Result] = respond(_ ⇒ result)
 
