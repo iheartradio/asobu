@@ -46,7 +46,7 @@ trait ExtractorFunctions extends ExtractorOps {
   //todo: use Magnet pattern for the creation shortcuts here
   implicit def of[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = Kleisli(f)
 
-  @deprecated("user `of` instead", "0.5.0")
+  @deprecated("use `of` instead", "0.5.0")
   def fromFunction[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = f
 
   def empty[TFrom]: Extractor[TFrom, HNil] = apply(_ ⇒ HNil)

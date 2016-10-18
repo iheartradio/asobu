@@ -9,7 +9,4 @@ import scala.concurrent.Future
 
 package object distributed {
   type Headers = Seq[(String, String)] //Use Seq instead of Map to better ensure serialization
-
-  type Body = play.api.mvc.AnyContent //use Array[Byte] or other serializable data structure
-
 }
