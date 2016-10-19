@@ -2,7 +2,7 @@ package asobu.distributed.util
 
 import play.routes.compiler._
 import play.api.http.HttpVerbs._
-//todo:
+
 object MockRoute {
   def apply(
     pathParts: List[String] = List("abc", "ep1"),
