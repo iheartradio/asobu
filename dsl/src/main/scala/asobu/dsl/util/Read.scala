@@ -22,7 +22,6 @@ trait ReadInstances {
   implicit val longReader: Read[Long] = apply(_.toLong)
   implicit val doubleReader: Read[Double] = apply(_.toDouble)
   implicit val booleanReader: Read[Boolean] = apply(_.toBoolean)
-
 }
 
 object Read extends ReadInstances

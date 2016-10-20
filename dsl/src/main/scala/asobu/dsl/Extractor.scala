@@ -13,7 +13,7 @@ import cats.syntax.all._
 import CatsInstances._
 import concurrent.ExecutionContext.Implicits.global
 import cats.sequence._
-
+import scala.language.implicitConversions
 object Extractor extends ExtractorFunctions
 
 trait ExtractorOps {
@@ -31,6 +31,10 @@ trait ExtractorOps {
     def ensure(ifLeft: ⇒ Result)(f: B ⇒ Boolean)(implicit ex: ExecutionContext): Extractor[A, B] =
       self.mapF(_.ensure(ifLeft)(f))
 
+    def orElse(b: ⇒ Extractor[A, B]): Extractor[A, B] = { (a: A) ⇒
+      self.run(a) orElse b.run(a)
+    }
+
     def allFields(implicit gen: LabelledGeneric[B]): Extractor[A, gen.Repr] = self.map(gen.to(_))
   }
 }
@@ -38,12 +42,18 @@ trait ExtractorOps {
 object ExtractorOps extends ExtractorOps
 
 trait ExtractorFunctions extends ExtractorOps {
-  implicit def fromFunction[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = Kleisli(f)
+
+  //todo: use Magnet pattern for the creation shortcuts here
+  implicit def of[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = Kleisli(f)
+
+  @deprecated("use `of` instead", "0.5.0")
+  def fromFunction[TFrom, T](f: TFrom ⇒ ExtractResult[T]): Extractor[TFrom, T] = f
 
   def empty[TFrom]: Extractor[TFrom, HNil] = apply(_ ⇒ HNil)
 
-  def apply[TFrom, T](f: TFrom ⇒ T): Extractor[TFrom, T] = f map pure
+  def apply[TFrom, T](f: TFrom ⇒ T): Extractor[TFrom, T] = f andThen pure
 
+  def ofEither[TFrom, T](f: TFrom ⇒ Either[Result, T]) = f andThen ExtractResult.fromEither
   /**
    * extractor from a list of functions
    * e.g. from(a = (_:Request[AnyContent]).headers("aKay"))
@@ -78,7 +88,7 @@ trait ExtractorFunctions extends ExtractorOps {
   )(
     implicit
     prepend: Prepend.Aux[LA, LB, LOut]
-  ): Extractor[(FromA, FromB), LOut] = Extractor.fromFunction { (p: (FromA, FromB)) ⇒
+  ): Extractor[(FromA, FromB), LOut] = Extractor.of { (p: (FromA, FromB)) ⇒
     val (a, b) = p
     for {
       ra ← ea.run(a)

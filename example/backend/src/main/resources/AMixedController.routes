@@ -4,11 +4,23 @@
 ###
 GET   /ep1/a/:n   backend.endpoints.AMixedController.ep1(n: Int)
 
-### NoDocs ###
-GET   /ep2/:a/something   a.b.d(a: Int, b: String)
+###
+# summary: post a model authenticated requires userId in the headers
+# parameters:
+#   - name: body
+#     schema:
+#       $ref: '#/definitions/backend.models.Student'
+# responses:
+#   200:
+#     description: success
+#     schema:
+#       $ref: '#/definitions/backend.school.StudentService.Grade'
+###
+POST   /ep2/something   backend.endpoints.AMixedController.ep2()
 
 ###
 # summary: post a model authenticated requires userId in the headers
+# description: This entry point is authenticated, requires user_id in the headers
 # parameters:
 #   - name: body
 #     schema:

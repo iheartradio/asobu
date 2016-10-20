@@ -6,7 +6,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import asobu.distributed.EndpointsRegistryUpdater.Add
 import asobu.distributed._
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.protocol.EndpointDefinition
 import scala.concurrent.{Future, ExecutionContext}
 
 trait EndpointsRegistryClient {

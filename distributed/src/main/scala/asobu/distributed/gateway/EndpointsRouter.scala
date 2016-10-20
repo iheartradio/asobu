@@ -1,6 +1,7 @@
 package asobu.distributed.gateway
 
 import akka.agent.Agent
+import asobu.distributed.gateway.EndpointsRouter.Handler
 import com.google.inject.{Singleton, Inject}
 import play.api.mvc.{RequestHeader, Result}
 import play.api.mvc.Results.NotFound
@@ -8,6 +9,8 @@ import scala.concurrent.{Future, ExecutionContext}
 
 object EndpointsRouter {
   def apply()(implicit ex: ExecutionContext) = new EndpointsRouter()
+  type Handler = PartialFunction[RequestHeader, Future[Result]]
+
 }
 
 /**
@@ -20,13 +23,11 @@ class EndpointsRouter(onNotFound: RequestHeader ⇒ Future[Result])(implicit ex:
     NotFound(s"Action or remote endpoints not found for ${req.path}")
   ))
 
-  type Handler = PartialFunction[RequestHeader, Future[Result]]
-
   val endpointsAgent = Agent[(Handler, List[Endpoint])]((PartialFunction(onNotFound), Nil))
 
   def update(endpoints: List[Endpoint]): Future[(Handler, List[Endpoint])] = {
     def toPartial(endpoint: Endpoint): Handler = {
-      case req @ endpoint(requestParams) ⇒ endpoint.handle(requestParams, req)
+      case req @ endpoint(requestParams) ⇒ endpoint.handle(GateWayRequest(requestParams, req))
     }
 
     //todo: improve performance by doing a prefix search first

@@ -22,6 +22,21 @@ object HListOps {
     }
   }
 
+  trait Combine3To[R1 <: HList, R2 <: HList, R3 <: HList, Out <: HList] {
+    def apply(r1: R1, r2: R2, r3: R3): Out
+  }
+
+  object Combine3To {
+    implicit def apply[R1 <: HList, R2 <: HList, R3 <: HList, Out <: HList, R1AndR2 <: HList, Full <: HList](
+      implicit
+      prepend1: Prepend.Aux[R1, R2, R1AndR2],
+      prepend2: Prepend.Aux[R1AndR2, R3, Full],
+      align: Align[Full, Out]
+    ): Combine3To[R1, R2, R3, Out] = new Combine3To[R1, R2, R3, Out] {
+      def apply(r1: R1, r2: R2, r3: R3): Out = align(prepend2(prepend1(r1, r2), r3))
+    }
+  }
+
   /**
    * Attach keys from the record Out onto the values of HList L to construct a record of Out
    *

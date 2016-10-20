@@ -1,7 +1,8 @@
 package asobu.dsl.extractors
 
 import asobu.dsl.util.Read
-import asobu.dsl.{FallbackResult, RequestExtractor, ExtractResult}
+import asobu.dsl._
+import RequestExtractor._
 import cats.data.Kleisli
 import play.api.mvc.{Request, AnyContent}
 
@@ -9,18 +10,17 @@ import ExtractResult._
 import shapeless.Witness
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
+import CatsInstances._
 
 trait HeaderExtractors {
-  def header[T: Read](key: String)(implicit fbr: FallbackResult, ex: ExecutionContext): RequestExtractor[T] = Kleisli({ (req: Request[AnyContent]) ⇒
-    val parsed: Try[T] = for {
-      v ← req.headers.get(key).fold[Try[String]](Failure[String](new NoSuchElementException(s"Cannot find $key in header")))(Success(_))
-      r ← Read[T].parse(v)
-    } yield r
-
-    fromTry(parsed)
-  })
-
+  import HeaderExtractors.missingHeaderException
+  def header[T: Read](key: String)(implicit fbr: FallbackResult, ex: ExecutionContext): RequestExtractor[T] = {
+    RequestExtractor(_.headers.get(key)) andThen
+      PrimitiveExtractors.stringOption(missingHeaderException(key))
+  }
 }
 
-object HeaderExtractors extends HeaderExtractors
+object HeaderExtractors extends HeaderExtractors {
+  def missingHeaderException(key: String): Throwable = new NoSuchElementException(s"Cannot find $key in header")
+}
 

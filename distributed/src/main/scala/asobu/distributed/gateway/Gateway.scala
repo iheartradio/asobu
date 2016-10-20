@@ -1,11 +1,12 @@
 package asobu.distributed.gateway
 
-import asobu.distributed.CustomRequestExtractorDefinition.Interpreter
 import asobu.distributed._
+import asobu.distributed.gateway.Endpoint.EndpointFactory
+import asobu.distributed.gateway.enricher.{DisabledInterpreter, Interpreter}
 import play.api.inject.Binding
 import scala.reflect.ClassTag
-import javax.inject.{Inject, Singleton}
-import akka.actor.ActorSystem
+import javax.inject.{Provider, Inject, Singleton}
+import akka.actor.{ActorRefFactory, ActorSystem}
 import asobu.distributed.{DefaultEndpointsRegistry, SystemValidator}
 import play.api.{Configuration, Environment}
 import play.api.inject.Module
@@ -13,10 +14,10 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class Gateway @Inject() (
-    handlerBridgeProps: HandlerBridgeProps,
+    endpointFactoryProvider: EndpointFactoryProvider,
     system: ActorSystem,
     endpointsRouter: EndpointsRouter
-)(implicit ec: ExecutionContext, interpreter: Interpreter) {
+)(implicit ec: ExecutionContext) {
 
   val validatorResult = SystemValidator.validate(system)
   assert(validatorResult.isRight, validatorResult.left.get)
@@ -27,7 +28,7 @@ class Gateway @Inject() (
     EndpointsRouterUpdater.props(
       registry,
       endpointsRouter,
-      handlerBridgeProps
+      endpointFactoryProvider()
     ), "asobu-gateway-routers-updater"
   )
 
@@ -43,8 +44,7 @@ class Gateway @Inject() (
  */
 class GateWayModule extends Module {
 
-  protected def defaultBridgeClass: Class[_ <: HandlerBridgeProps] = classOf[DefaultHandlerBridgeProps]
-  protected def defaultInterpreterClass: Class[_ <: Interpreter] = classOf[DisabledCustomExtractorInterpreter]
+  protected def defaultEndpointFactoryProviderClass: Class[_ <: EndpointFactoryProvider] = classOf[DefaultEndpointFactoryProvider]
 
   private class syntax[T: ClassTag](self: Option[Class[_ <: T]]) {
     def withDefault[DT <: T](defaultClass: Class[_ <: T]): Binding[T] =
@@ -55,7 +55,6 @@ class GateWayModule extends Module {
     environment: Environment,
     configuration: Configuration
   ) = {
-
     def bindFromConfig[T: ClassTag](cfgName: String): syntax[T] = {
       val bindClass: Class[T] = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
       val className = configuration.getString(s"asobu.$cfgName")
@@ -63,9 +62,21 @@ class GateWayModule extends Module {
     }
 
     Seq(
-      bind[Gateway].toSelf.eagerly,
-      bindFromConfig[HandlerBridgeProps]("bridgePropsClass").withDefault(defaultBridgeClass),
-      bindFromConfig[Interpreter](CustomRequestExtractorDefinition.interpreterClassConfigKey).withDefault(defaultInterpreterClass)
+      bindFromConfig[EndpointFactoryProvider]("endpointFactoryProviderClass").withDefault(defaultEndpointFactoryProviderClass),
+      bind[Gateway].toSelf.eagerly
     )
+  }
+}
+
+trait EndpointFactoryProvider extends (() ⇒ EndpointFactory)
+
+class DefaultEndpointFactoryProvider @Inject() (
+    implicit
+    arf: ActorRefFactory,
+    ec: ExecutionContext
+) extends EndpointFactoryProvider {
+  def apply(): EndpointFactory = {
+    implicit val defaultInterpreter = new DisabledInterpreter
+    EndpointFactory[Nothing](new DefaultHandlerBridgeProps)
   }
 }

@@ -3,8 +3,9 @@ package asobu.distributed.service
 import akka.ConfigurationException
 import akka.actor.ActorSystem
 import akka.util.Timeout
-import asobu.distributed.{DefaultEndpointsRegistry, EndpointDefinition, EndpointsRegistry, SystemValidator}
-import asobu.distributed.gateway.Endpoint.Prefix
+import asobu.distributed.protocol.EndpointDefinition
+import asobu.distributed.{DefaultEndpointsRegistry, EndpointsRegistry, SystemValidator}
+import asobu.distributed.protocol.Prefix
 import play.api.libs.json.JsObject
 import play.routes.compiler.{HandlerCall, Route}
 import scala.concurrent.{ExecutionContext, Future}

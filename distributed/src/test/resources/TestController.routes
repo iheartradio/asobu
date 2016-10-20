@@ -1,3 +1,8 @@
 GET   /cats/:catId       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.cats(catId: String)
 
 GET   /dogs/:name       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.dogs(name: String, birthYear: Int)
+
+GET   /auth-dogs/:name       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.authDogs(name: String, birthYear: Int)
+
+GET   /perm-dogs/:name       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.permDogs(name: String, birthYear: Int)
+GET   /no-perm-dogs/:name       asobu.distributed.End2EndSpec.DistributedSystem.ServiceBackend.TestController.noPermDogs(name: String, birthYear: Int)

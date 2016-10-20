@@ -1,20 +1,21 @@
 package asobu.distributed.gateway
 
 import akka.testkit.TestProbe
-import asobu.distributed.service.Action.DistributedRequest
-import asobu.distributed.util.SpecWithActorCluster
-import asobu.distributed.{EndpointDefinition, NullaryEndpointDefinition}
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.service.EndpointDefinitionParser
+import asobu.distributed.FakeRequests
+import asobu.distributed.protocol.EndpointDefinition
+import asobu.distributed.protocol.{DResult, DRequest}
+import asobu.distributed.util.{EndpointUtil, SpecWithActorCluster}
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.service.EndpointRoutesParser
 import play.api.test.FakeRequest
 import play.routes.compiler._
 import shapeless.HNil
 import concurrent.duration._
-import asobu.distributed.util.implicits._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import EndpointDefinition._
 
-class EndpointsRouterSpec extends SpecWithActorCluster {
+class EndpointsRouterSpec extends SpecWithActorCluster with FakeRequests {
 
   import play.api.http.HttpVerbs._
   val routeString =
@@ -31,24 +32,26 @@ class EndpointsRouterSpec extends SpecWithActorCluster {
   val worker2 = TestProbe()
   val createEndpointDef = (route: Route, prefix: Prefix) ⇒ {
     val path = if (route.path.toString.contains("ep1")) worker1.ref.path else worker2.ref.path
-    NullaryEndpointDefinition(prefix, route, path, role): EndpointDefinition
+    EndpointDefinition(prefix, route, path.handlerAddress, role, None, None)
   }
 
-  val parserResult = EndpointDefinitionParser.parse(Prefix("/"), routeString, createEndpointDef)
+  val endpointDefs = EndpointUtil.parseEndpoints(routeString)(createEndpointDef)
 
-  val endpoints = parserResult.right.get.map(Endpoint(_))
+  val endpoints = endpointDefs.map(EndpointUtil.endpointOf)
 
   val router = EndpointsRouter()
   Await.result(router.update(endpoints), 3.seconds)
 
   "route to worker1" >> {
-    router.handle(FakeRequest(GET, "/ep1/a"))
-    worker1.expectMsgType[DistributedRequest[HNil]].extracted === HNil
+    router.handle(request(GET, "/ep1/a"))
+    val rp = worker1.expectMsgType[DRequest].requestParams
+    rp.pathParams should beEmpty
   }
 
   "route to worker2" >> {
-    router.handle(FakeRequest(GET, "/ep2/b"))
-    worker2.expectMsgType[DistributedRequest[HNil]].extracted === HNil
+    router.handle(request(GET, "/ep2/b"))
+    val rp = worker2.expectMsgType[DRequest].requestParams
+    rp.queryString should beEmpty
   }
 
 }

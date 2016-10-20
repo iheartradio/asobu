@@ -1,8 +1,8 @@
 package asobu.distributed.service
 
 import akka.actor.ActorSystem
-import asobu.distributed.gateway.Endpoint.Prefix
-import asobu.distributed.EndpointDefinition
+import asobu.distributed.protocol.Prefix
+import asobu.distributed.protocol.EndpointDefinition
 import play.routes.compiler.{HandlerCall, Route}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +21,7 @@ trait Controller {
 
   def actionName(shortName: String) = getClass.getName.stripSuffix("$").replace('$', '.') + "." + shortName //todo: a more solid name for action
 
-  lazy val routes: List[Route] = EndpointDefinitionParser.parseResource(s"$name.routes") match {
+  lazy val routes: List[Route] = EndpointRoutesParser.parseResource(s"$name.routes") match {
     case Right(rs) ⇒ rs
     case Left(err) ⇒ throw RoutesParsingException(err.map(_.toString).mkString(". "))
   }
